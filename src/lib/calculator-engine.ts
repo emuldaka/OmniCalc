@@ -230,32 +230,32 @@ function evaluate(state: CalculatorState): CalculatorState {
 }
 
 export const calculatorButtons = [
-  { label: "AC", type: "CLEAR_ALL", className: "bg-destructive/80 hover:bg-destructive text-destructive-foreground col-span-2" },
-  { label: "C", type: "CLEAR_ENTRY", className: "bg-destructive/80 hover:bg-destructive text-destructive-foreground" },
+  // Row 1: AC, ±, %, ÷
+  { label: "AC", type: "CLEAR_ALL", className: "bg-destructive/80 hover:bg-destructive text-destructive-foreground" },
+  { label: "±", type: "TOGGLE_SIGN", className: "bg-secondary hover:bg-secondary/80" },
+  { label: "%", type: "PERCENTAGE", className: "bg-secondary hover:bg-secondary/80" },
   { label: "÷", type: "CHOOSE_OPERATION", className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
   
-  { label: "√", type: "SQUARE_ROOT", className: "bg-secondary hover:bg-secondary/80" },
-  { label: "xʸ", type: "CHOOSE_OPERATION", value: "^", className: "bg-secondary hover:bg-secondary/80" },
-  { label: "%", type: "PERCENTAGE", className: "bg-secondary hover:bg-secondary/80" },
-  { label: "×", type: "CHOOSE_OPERATION", className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
-
+  // Row 2: 7, 8, 9, ×
   { label: "7", type: "ADD_DIGIT" },
   { label: "8", type: "ADD_DIGIT" },
   { label: "9", type: "ADD_DIGIT" },
-  { label: "-", type: "CHOOSE_OPERATION", className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
+  { label: "×", type: "CHOOSE_OPERATION", className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
 
+  // Row 3: 4, 5, 6, -
   { label: "4", type: "ADD_DIGIT" },
   { label: "5", type: "ADD_DIGIT" },
   { label: "6", type: "ADD_DIGIT" },
-  { label: "+", type: "CHOOSE_OPERATION", className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
+  { label: "-", type: "CHOOSE_OPERATION", className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
 
+  // Row 4: 1, 2, 3, +
   { label: "1", type: "ADD_DIGIT" },
   { label: "2", type: "ADD_DIGIT" },
   { label: "3", type: "ADD_DIGIT" },
-  { label: "=", type: "EVALUATE", className: "row-span-2 bg-primary hover:bg-primary/90 text-primary-foreground" },
+  { label: "+", type: "CHOOSE_OPERATION", className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
   
+  // Row 5: 0 (span 2), ., =
   { label: "0", type: "ADD_DIGIT", className: "col-span-2" },
   { label: ".", type: "ADD_DIGIT" },
-  // { label: "±", type: "TOGGLE_SIGN" }, // Add if desired
-  // { label: "DEL", type: "DELETE_DIGIT" }, // Add if desired
+  { label: "=", type: "EVALUATE", className: "bg-primary hover:bg-primary/90 text-primary-foreground" },
 ];
