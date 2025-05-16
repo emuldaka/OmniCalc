@@ -361,7 +361,7 @@ export const scientificCalculatorButtons: Array<{
   secondLabel?: string;
   secondAction?: AdvancedCalculatorAction;
   className?: string;
-  colSpan?: number; // Added colSpan for buttons like 0 and =
+  colSpan?: number; 
 }> = [
   // Row 1
   { label: "2nd", action: { type: "TOGGLE_SECOND_FUNCTION" }, className: "bg-primary hover:bg-primary/80 text-primary-foreground" },
@@ -400,7 +400,7 @@ export const scientificCalculatorButtons: Array<{
   { label: "e", action: { type: "INPUT_CONSTANT", payload: "e" } },
   { label: "C", action: { type: "CLEAR_ALL" }, className: "bg-destructive hover:bg-destructive/80 text-destructive-foreground" },
   { label: "CE", action: { type: "CLEAR_ENTRY" }, className: "bg-destructive hover:bg-destructive/80 text-destructive-foreground" },
-  { label: "⌫", action: { type: "BACKSPACE" }, className: "bg-red-500 hover:bg-red-600 text-white" },
+  { label: "⌫", action: { type: "BACKSPACE" }, className: "bg-red-500 hover:bg-red-600 text-primary-foreground" }, // text-white changed to text-primary-foreground
   { label: "=", action: { type: "EVALUATE" }, className: "bg-primary hover:bg-primary/90 text-primary-foreground" },
   { label: "0", action: { type: "INPUT_DIGIT", payload: "0" } },
   { label: ".", action: { type: "INPUT_DECIMAL" }, className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
