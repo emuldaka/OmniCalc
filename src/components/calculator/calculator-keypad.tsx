@@ -19,7 +19,7 @@ export function CalculatorKeypad({ onButtonClick, currentState }: CalculatorKeyp
           key={btn.label}
           variant={btn.className && (btn.className.includes("bg-primary") || btn.className.includes("bg-accent") || btn.className.includes("bg-destructive")) ? "default" : "secondary"}
           className={cn(
-            "text-2xl h-20 w-full rounded-md shadow-md focus:ring-2 focus:ring-ring focus:ring-offset-1",
+            "text-xl h-16 w-full rounded-md shadow-md focus:ring-2 focus:ring-ring focus:ring-offset-1", // Changed text-2xl h-20 to text-xl h-16
             "active:scale-95 transition-transform duration-75",
             btn.className,
             // Example of dynamic styling based on state:
