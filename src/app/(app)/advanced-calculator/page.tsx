@@ -174,32 +174,9 @@ export default function AdvancedCalculatorPage() {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Column 1: Calculators and Stored Equations */}
+        {/* Column 1: Calculator, Direct Numeric Input, and Stored Numeric Values */}
         <div className="flex flex-col space-y-4">
           <AdvancedCalculatorLayout onStoreResult={handleStoreResultFromCalculator} />
-          <FxCalculatorSection onAddEquation={handleAddEquation} />
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-2xl text-primary flex items-center">
-                <FunctionSquare className="mr-3 h-7 w-7" /> Stored Equations
-              </CardTitle>
-              <CardDescription>
-                Manage your equations. Check to plot them on the graph.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <StoredEquationsContainer
-                equations={storedEquations}
-                onTogglePlot={handleToggleEquationPlot}
-                onDeleteEquation={handleDeleteEquation}
-              />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Column 2: Graph, Direct Value Input, and Stored Numeric Values */}
-        <div className="flex flex-col space-y-4">
-          <GraphingSection data={graphableEquationData} onClearPlots={handleClearPlots} />
           <Card className="shadow-md">
             <CardHeader>
               <CardTitle className="text-xl text-primary flex items-center">
@@ -233,6 +210,29 @@ export default function AdvancedCalculatorPage() {
                 />
             </CardContent>
          </Card>
+        </div>
+
+        {/* Column 2: Graph, f(x) Equation Definer, and Stored Equations */}
+        <div className="flex flex-col space-y-4">
+          <GraphingSection data={graphableEquationData} onClearPlots={handleClearPlots} />
+          <FxCalculatorSection onAddEquation={handleAddEquation} />
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-2xl text-primary flex items-center">
+                <FunctionSquare className="mr-3 h-7 w-7" /> Stored Equations
+              </CardTitle>
+              <CardDescription>
+                Manage your equations. Check to plot them on the graph.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <StoredEquationsContainer
+                equations={storedEquations}
+                onTogglePlot={handleToggleEquationPlot}
+                onDeleteEquation={handleDeleteEquation}
+              />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
