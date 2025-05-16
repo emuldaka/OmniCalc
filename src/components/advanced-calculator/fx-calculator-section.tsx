@@ -30,8 +30,9 @@ export function FxCalculatorSection({ onAddEquation }: FxCalculatorSectionProps)
         </CardTitle>
         <CardDescription>
           Enter an equation in terms of 'x'. You can use prefixes like "f(x) =" or "y =".
-          Example: "f(x) = x**2 - 5*x + 3" or "0.5*x + 2".
+          Example: "f(x) = x**2 - 5*x + 3" or "sin(x) + cos(x)".
           Use '**' for exponentiation (e.g., "x**3" for x cubed).
+          Functions like sin(x), cos(x), tan(x), log(x), ln(x), sqrt(x), abs(x), e^(x) are supported.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -40,7 +41,7 @@ export function FxCalculatorSection({ onAddEquation }: FxCalculatorSectionProps)
             type="text"
             value={equationInput}
             onChange={(e) => setEquationInput(e.target.value)}
-            placeholder="e.g., f(x) = 0.5*x**2 - 3*x + 4"
+            placeholder="e.g., f(x) = sin(x) + 0.5*cos(2*x)"
             className="flex-grow"
           />
           <Button onClick={handleAddClick} aria-label="Add equation to storage">
@@ -48,8 +49,8 @@ export function FxCalculatorSection({ onAddEquation }: FxCalculatorSectionProps)
           </Button>
         </div>
          <p className="text-xs text-muted-foreground">
-          Supported operators: +, -, *, /, ** (power). Use Math object for functions e.g. Math.sin(x).
-          Implicit multiplication (e.g., "2x") will be interpreted as "2*x".
+          Use 'x' as the variable. Standard operators: +, -, *, /, ** (power). 
+          Implicit multiplication (e.g., "2x") is supported. Constants: pi, e.
         </p>
       </CardContent>
     </Card>
