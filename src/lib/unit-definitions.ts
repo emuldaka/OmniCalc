@@ -1,6 +1,6 @@
 
 // src/lib/unit-definitions.ts
-import { Ruler, Maximize, Box, Scale, Thermometer, Clock, DollarSign, Globe, Flame, Binary, Compass, Gauge, Compress, Bolt } from 'lucide-react';
+import { Ruler, Maximize, Box, Scale, Thermometer, Clock, DollarSign, Globe, Flame, Binary, Compass, Gauge, Wind, Bolt } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export interface Unit {
@@ -287,7 +287,7 @@ export const unitCategories: UnitCategory[] = [
   {
     id: 'pressure',
     name: 'Pressure',
-    icon: Compress,
+    icon: Wind, // Changed from Compress to Wind
     baseUnit: 'pascal',
     units: [
       { id: 'pascal', name: 'Pascal', symbol: 'Pa', baseFactor: 1 },
