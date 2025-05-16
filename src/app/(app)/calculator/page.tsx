@@ -71,7 +71,7 @@ export default function CalculatorPage() {
 
   return (
     <div className="flex flex-col items-center justify-center h-full">
-      <Card className="w-full max-w-md shadow-2xl">
+      <Card className="w-full max-w-lg shadow-2xl"> {/* Changed max-w-md to max-w-lg */}
         <CardHeader>
           <CardTitle className="text-2xl text-center text-primary">Calculator</CardTitle>
         </CardHeader>

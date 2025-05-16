@@ -19,12 +19,12 @@ export function CalculatorDisplay({ mainDisplay, secondaryDisplay }: CalculatorD
   return (
     <div className="bg-muted/50 p-6 rounded-lg text-right shadow-inner mb-4">
       {secondaryDisplay && (
-        <div className="text-muted-foreground text-xl h-7 truncate" title={secondaryDisplay}>
+        <div className="text-muted-foreground text-xl h-8 truncate" title={secondaryDisplay}>
           {secondaryDisplay}
         </div>
       )}
       <div 
-        className="text-foreground text-5xl font-mono font-bold h-14 truncate" 
+        className="text-foreground text-4xl font-mono font-bold h-20 truncate"
         title={formattedMainDisplay}
         aria-live="polite"
       >
