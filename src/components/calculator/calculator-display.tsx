@@ -23,7 +23,7 @@ export function CalculatorDisplay({ mainDisplay, secondaryDisplay }: CalculatorD
         </div>
       )}
       <div 
-        className="text-foreground text-4xl font-mono font-bold h-20 truncate text-center"
+        className="text-foreground text-4xl font-mono font-bold h-20 flex items-center justify-center truncate"
         title={formattedMainDisplay}
         aria-live="polite"
       >
