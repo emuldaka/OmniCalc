@@ -210,7 +210,8 @@ function evaluate(state: CalculatorState): CalculatorState {
       computation = Math.pow(prev, current);
       break;
     default:
-      return state; // Should not happen
+      // This case should ideally not be reached if operations are validated before evaluation
+      return { ...state, error: "Unknown Operation", displayValue: "Error", currentOperand: "Error" };
   }
 
   if (!isFinite(computation)) {
@@ -221,38 +222,37 @@ function evaluate(state: CalculatorState): CalculatorState {
     ...state,
     currentOperand: computation.toString(),
     displayValue: computation.toString(),
-    operation: null, // Typically operation is cleared after eval, or kept for chained ops
-    previousOperand: null, // Previous operand is consumed
-    // expression: `${state.expression} ${state.currentOperand} =`, // Update expression in EVALUATE action
+    operation: null, 
+    previousOperand: null, 
     overwrite: true,
     error: null,
   };
 }
 
 export const calculatorButtons = [
-  // Row 1: AC, ±, %, ÷
+  // Row 1: AC, ±, ^, ÷
   { label: "AC", type: "CLEAR_ALL", className: "bg-destructive/80 hover:bg-destructive text-destructive-foreground" },
   { label: "±", type: "TOGGLE_SIGN", className: "bg-secondary hover:bg-secondary/80" },
-  { label: "%", type: "PERCENTAGE", className: "bg-secondary hover:bg-secondary/80" },
-  { label: "÷", type: "CHOOSE_OPERATION", className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
+  { label: "^", type: "CHOOSE_OPERATION", value: "^", className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
+  { label: "÷", type: "CHOOSE_OPERATION", value: "÷", className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
   
   // Row 2: 7, 8, 9, ×
   { label: "7", type: "ADD_DIGIT" },
   { label: "8", type: "ADD_DIGIT" },
   { label: "9", type: "ADD_DIGIT" },
-  { label: "×", type: "CHOOSE_OPERATION", className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
+  { label: "×", type: "CHOOSE_OPERATION", value: "×", className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
 
   // Row 3: 4, 5, 6, -
   { label: "4", type: "ADD_DIGIT" },
   { label: "5", type: "ADD_DIGIT" },
   { label: "6", type: "ADD_DIGIT" },
-  { label: "-", type: "CHOOSE_OPERATION", className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
+  { label: "-", type: "CHOOSE_OPERATION", value: "-", className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
 
   // Row 4: 1, 2, 3, +
   { label: "1", type: "ADD_DIGIT" },
   { label: "2", type: "ADD_DIGIT" },
   { label: "3", type: "ADD_DIGIT" },
-  { label: "+", type: "CHOOSE_OPERATION", className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
+  { label: "+", type: "CHOOSE_OPERATION", value: "+", className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
   
   // Row 5: 0 (span 2), ., =
   { label: "0", type: "ADD_DIGIT", className: "col-span-2" },
