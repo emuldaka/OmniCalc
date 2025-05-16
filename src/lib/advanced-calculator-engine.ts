@@ -347,10 +347,10 @@ export const scientificCalculatorButtons: Array<{
   secondLabel?: string;
   secondAction?: AdvancedCalculatorAction;
   className?: string;
-  colSpan?: number; // Added for buttons like "0" or "=" that might span columns
+  colSpan?: number;
 }> = [
   // Row 1
-  { label: "2nd", action: { type: "TOGGLE_SECOND_FUNCTION" }, className: "bg-primary/70 hover:bg-primary/90 text-primary-foreground" },
+  { label: "2nd", action: { type: "TOGGLE_SECOND_FUNCTION" }, className: "bg-primary hover:bg-primary/80 text-primary-foreground" },
   { label: "Rad", action: { type: "TOGGLE_ANGLE_MODE" }, secondLabel: "Deg", secondAction: {type: "TOGGLE_ANGLE_MODE"}},
   { label: "sin", action: { type: "INPUT_UNARY_OPERATOR", payload: "sin" }, secondLabel: "asin", secondAction: { type: "INPUT_UNARY_OPERATOR", payload: "asin" } },
   { label: "cos", action: { type: "INPUT_UNARY_OPERATOR", payload: "cos" }, secondLabel: "acos", secondAction: { type: "INPUT_UNARY_OPERATOR", payload: "acos" } },
@@ -384,8 +384,8 @@ export const scientificCalculatorButtons: Array<{
   
   // Row 4
   { label: "e", action: { type: "INPUT_CONSTANT", payload: "e" } },
-  { label: "C", action: { type: "CLEAR_ALL" }, className: "bg-destructive/70 hover:bg-destructive text-destructive-foreground" },
-  { label: "CE", action: { type: "CLEAR_ENTRY" }, className: "bg-destructive/70 hover:bg-destructive text-destructive-foreground" },
+  { label: "C", action: { type: "CLEAR_ALL" }, className: "bg-destructive hover:bg-destructive/80 text-destructive-foreground" },
+  { label: "CE", action: { type: "CLEAR_ENTRY" }, className: "bg-destructive hover:bg-destructive/80 text-destructive-foreground" },
   { label: "⌫", action: { type: "BACKSPACE" } },
   { label: "=", action: { type: "EVALUATE" }, className: "bg-primary hover:bg-primary/90 text-primary-foreground" },
   { label: "0", action: { type: "INPUT_DIGIT", payload: "0" } },
@@ -393,3 +393,4 @@ export const scientificCalculatorButtons: Array<{
   { label: "±", action: { type: "APPLY_POSTFIX_UNARY", payload: "negate" } },
   { label: "+", action: { type: "INPUT_OPERATOR", payload: "+" }, className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
 ];
+
