@@ -1,6 +1,6 @@
 
 // src/lib/unit-definitions.ts
-import { Ruler, Maximize, Box, Scale, Thermometer, Clock, DollarSign, Globe } from 'lucide-react';
+import { Ruler, Maximize, Box, Scale, Thermometer, Clock, DollarSign, Globe, Flame, Binary, Compass, Gauge, Compress, Bolt } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export interface Unit {
@@ -163,15 +163,15 @@ export const unitCategories: UnitCategory[] = [
     icon: Thermometer,
     baseUnit: 'celsius',
     units: [
-      { id: 'celsius', name: 'Celsius', symbol: '°C', baseFactor: 0 }, // baseFactor not directly used by its formula in the standard way
+      { id: 'celsius', name: 'Celsius', symbol: '°C', baseFactor: 0 },
       { id: 'fahrenheit', name: 'Fahrenheit', symbol: '°F', baseFactor: 0 },
       { id: 'kelvin', name: 'Kelvin', symbol: 'K', baseFactor: 0 },
     ],
     conversionFormula: temperatureConversion,
   },
   {
-    id: 'time',
-    name: 'Time (Duration)', // Renamed for clarity vs Time Zone
+    id: 'time_duration', // Renamed from 'time' to avoid confusion with 'timezone'
+    name: 'Time (Duration)',
     icon: Clock,
     baseUnit: 'second',
     units: [
@@ -180,8 +180,8 @@ export const unitCategories: UnitCategory[] = [
       { id: 'hour', name: 'Hour', symbol: 'hr', baseFactor: 3600 },
       { id: 'day', name: 'Day', symbol: 'd', baseFactor: 86400 },
       { id: 'week', name: 'Week', symbol: 'wk', baseFactor: 604800 },
-      { id: 'month', name: 'Month (30d)', symbol: 'mo', baseFactor: 2592000 },
-      { id: 'year', name: 'Year (365d)', symbol: 'yr', baseFactor: 31536000 },
+      { id: 'month', name: 'Month (30d)', symbol: 'mo', baseFactor: 2592000 }, // Approx.
+      { id: 'year', name: 'Year (365d)', symbol: 'yr', baseFactor: 31536000 }, // Approx.
     ],
     conversionFormula: standardConversion,
   },
@@ -189,7 +189,7 @@ export const unitCategories: UnitCategory[] = [
     id: 'timezone',
     name: 'Time Zone',
     icon: Globe,
-    baseUnit: 'utc', // Conceptually, as offsets are relative to UTC
+    baseUnit: 'utc', 
     units: [
       { id: 'utc', name: 'Coordinated Universal Time', symbol: 'UTC', baseFactor: 0 },
       { id: 'gmt', name: 'Greenwich Mean Time', symbol: 'GMT', baseFactor: 0 },
@@ -210,15 +210,106 @@ export const unitCategories: UnitCategory[] = [
     conversionFormula: timezoneConversion,
   },
   {
-    id: 'currency', // Placeholder, requires API for real rates
+    id: 'currency', 
     name: 'Currency',
     icon: DollarSign,
-    baseUnit: 'usd',
+    baseUnit: 'usd', // Note: Static factors, not live rates
     units: [
       { id: 'usd', name: 'US Dollar', symbol: 'USD', baseFactor: 1 },
-      { id: 'eur', name: 'Euro', symbol: 'EUR', baseFactor: 0.92 },
-      { id: 'gbp', name: 'British Pound', symbol: 'GBP', baseFactor: 0.79 },
-      { id: 'jpy', name: 'Japanese Yen', symbol: 'JPY', baseFactor: 150.0 },
+      { id: 'eur', name: 'Euro', symbol: 'EUR', baseFactor: 0.92 }, // Example rate
+      { id: 'gbp', name: 'British Pound', symbol: 'GBP', baseFactor: 0.79 }, // Example rate
+      { id: 'jpy', name: 'Japanese Yen', symbol: 'JPY', baseFactor: 150.0 }, // Example rate
+      { id: 'cad', name: 'Canadian Dollar', symbol: 'CAD', baseFactor: 1.35 }, // Example rate
+      { id: 'aud', name: 'Australian Dollar', symbol: 'AUD', baseFactor: 1.50 }, // Example rate
+    ],
+    conversionFormula: standardConversion,
+  },
+  {
+    id: 'energy',
+    name: 'Energy',
+    icon: Flame,
+    baseUnit: 'joule',
+    units: [
+      { id: 'joule', name: 'Joule', symbol: 'J', baseFactor: 1 },
+      { id: 'kilojoule', name: 'Kilojoule', symbol: 'kJ', baseFactor: 1000 },
+      { id: 'calorie', name: 'Calorie (th)', symbol: 'cal', baseFactor: 4.184 },
+      { id: 'kilocalorie', name: 'Kilocalorie (Cal)', symbol: 'kcal', baseFactor: 4184 },
+      { id: 'watt_hour', name: 'Watt-hour', symbol: 'Wh', baseFactor: 3600 },
+      { id: 'kilowatt_hour', name: 'Kilowatt-hour', symbol: 'kWh', baseFactor: 3.6e6 },
+      { id: 'btu', name: 'British Thermal Unit', symbol: 'BTU', baseFactor: 1055.06 },
+    ],
+    conversionFormula: standardConversion,
+  },
+  {
+    id: 'data_transfer_rate',
+    name: 'Data Rate',
+    icon: Binary,
+    baseUnit: 'bps',
+    units: [
+      { id: 'bps', name: 'Bits per second', symbol: 'bps', baseFactor: 1 },
+      { id: 'kbps', name: 'Kilobits per second', symbol: 'kbps', baseFactor: 1e3 },
+      { id: 'mbps', name: 'Megabits per second', symbol: 'Mbps', baseFactor: 1e6 },
+      { id: 'gbps', name: 'Gigabits per second', symbol: 'Gbps', baseFactor: 1e9 },
+      { id: 'Bps', name: 'Bytes per second', symbol: 'B/s', baseFactor: 8 },
+      { id: 'kBps', name: 'Kilobytes per second', symbol: 'kB/s', baseFactor: 8 * 1e3 },
+      { id: 'mBps', name: 'Megabytes per second', symbol: 'MB/s', baseFactor: 8 * 1e6 },
+      { id: 'gBps', name: 'Gigabytes per second', symbol: 'GB/s', baseFactor: 8 * 1e9 },
+    ],
+    conversionFormula: standardConversion,
+  },
+  {
+    id: 'angle',
+    name: 'Angle',
+    icon: Compass,
+    baseUnit: 'radian',
+    units: [
+      { id: 'radian', name: 'Radian', symbol: 'rad', baseFactor: 1 },
+      { id: 'degree', name: 'Degree', symbol: '°', baseFactor: Math.PI / 180 },
+      { id: 'gradian', name: 'Gradian', symbol: 'grad', baseFactor: Math.PI / 200 },
+      { id: 'revolution', name: 'Revolution', symbol: 'rev', baseFactor: 2 * Math.PI },
+    ],
+    conversionFormula: standardConversion,
+  },
+  {
+    id: 'speed',
+    name: 'Speed',
+    icon: Gauge,
+    baseUnit: 'mps', // meters per second
+    units: [
+      { id: 'mps', name: 'Meters per second', symbol: 'm/s', baseFactor: 1 },
+      { id: 'kmph', name: 'Kilometers per hour', symbol: 'km/h', baseFactor: 1 / 3.6 },
+      { id: 'mph', name: 'Miles per hour', symbol: 'mph', baseFactor: 0.44704 },
+      { id: 'knot', name: 'Knot', symbol: 'kn', baseFactor: 0.514444 },
+      { id: 'fps', name: 'Feet per second', symbol: 'fps', baseFactor: 0.3048 },
+    ],
+    conversionFormula: standardConversion,
+  },
+  {
+    id: 'pressure',
+    name: 'Pressure',
+    icon: Compress,
+    baseUnit: 'pascal',
+    units: [
+      { id: 'pascal', name: 'Pascal', symbol: 'Pa', baseFactor: 1 },
+      { id: 'kilopascal', name: 'Kilopascal', symbol: 'kPa', baseFactor: 1000 },
+      { id: 'bar', name: 'Bar', symbol: 'bar', baseFactor: 1e5 },
+      { id: 'psi', name: 'Pounds per sq. inch', symbol: 'psi', baseFactor: 6894.76 },
+      { id: 'atm', name: 'Atmosphere', symbol: 'atm', baseFactor: 101325 },
+      { id: 'mmhg', name: 'Millimeters of Mercury', symbol: 'mmHg', baseFactor: 133.322 },
+    ],
+    conversionFormula: standardConversion,
+  },
+  {
+    id: 'power',
+    name: 'Power',
+    icon: Bolt,
+    baseUnit: 'watt',
+    units: [
+      { id: 'watt', name: 'Watt', symbol: 'W', baseFactor: 1 },
+      { id: 'kilowatt', name: 'Kilowatt', symbol: 'kW', baseFactor: 1000 },
+      { id: 'megawatt', name: 'Megawatt', symbol: 'MW', baseFactor: 1e6 },
+      { id: 'hp', name: 'Horsepower (mech)', symbol: 'hp', baseFactor: 745.7 },
+      { id: 'ft_lb_s', name: 'Foot-pounds per second', symbol: 'ft·lb/s', baseFactor: 1.35582 },
     ],
     conversionFormula: standardConversion,
   },
@@ -236,12 +327,13 @@ export function convertUnits(inputValue: string, fromUnitId: string, toUnitId: s
 
   if (!fromUnit || !toUnit) return "Invalid unit";
   
-  // For all categories except timezone, basic validation for numeric input string can be done here.
-  // Timezone has its own HH:MM format check within its formula.
   if (categoryId !== 'timezone') {
       const numericValue = parseFloat(inputValue);
+      // Allow empty string to clear output, but not as valid "0" for conversion unless explicitly "0"
       if (isNaN(numericValue) && inputValue.trim() !== "") return "Invalid input value: not a number";
       if (!isFinite(numericValue) && inputValue.trim() !== "") return "Invalid input value: not finite";
+       // If input is empty string, and not timezone, treat as "no input" rather than error
+      if (inputValue.trim() === "" && categoryId !== 'timezone') return "";
   }
 
 
@@ -249,11 +341,9 @@ export function convertUnits(inputValue: string, fromUnitId: string, toUnitId: s
     return category.conversionFormula(inputValue, fromUnit, toUnit, category);
   }
   
-  // Fallback, though all categories should have a formula.
-  // This fallback implicitly uses standardConversion logic.
   const numericValue = parseFloat(inputValue);
   if (isNaN(numericValue)) return "Invalid input value for fallback";
   return (numericValue * fromUnit.baseFactor) / toUnit.baseFactor;
 }
 
-  
+    
