@@ -50,13 +50,25 @@ const evaluateEquationForX = (equationString: string, xValue: number): number | 
       exprToEvaluate = prefixMatch[1];
     }
 
-    // Order of replacements is important
+    // IMPORTANT: Order of replacements is crucial
     let preparedString = exprToEvaluate
-      // Specific function patterns (e.g., e^, sqrt, trig, log)
-      // Ensure e^ is matched before standalone 'e' might be converted to Math.E
-      // Regex for e^(<balanced_parentheses_expr>) or e^<simple_expr_with_vars_ops>
-      .replace(/e\^(\((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*\)|[a-zA-Z0-9_.\s\/\*\-\+]+)/gi, 'Math.exp($1)')
-      .replace(/E\^(\((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*\)|[a-zA-Z0-9_.\s\/\*\-\+]+)/gi, 'Math.exp($1)') // Case for E^
+      // 1. Implicit multiplication (MUST run before function keyword replacements)
+      //    number followed by letter or parenthesis: 2x -> 2*x, 2( -> 2*(
+      .replace(/(\d(?:\.\d+)?)([a-zA-Z(])/g, '$1*$2')
+      //    letter or closing parenthesis followed by number: x2 -> x*2, )2 -> )*2
+      .replace(/([a-zA-Z)])(\d(?:\.\d+)?)/g, '$1*$2')
+      //    closing parenthesis or letter followed by opening parenthesis or letter: )( -> )*(, x( -> x*(, xy -> x*y
+      .replace(/([)a-zA-Z])([(a-zA-Z])/g, '$1*$2')
+
+      // 2. Superscripts for powers
+      .replace(/²/g, '**2')
+      .replace(/³/g, '**3')
+
+      // 3. Specific function patterns (e.g., e^, sqrt, trig, log)
+      //    Ensure e^ is matched before standalone 'e' might be converted to Math.E
+      //    Regex for e^(<balanced_parentheses_expr>) or e^<simple_expr_with_vars_ops>
+      .replace(/e\^(\((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*\)|[a-zA-Z0-9_.\s\/\*\-\+^]+)/gi, 'Math.exp($1)') // Argument can now include ^ for expressions like e^(x^2)
+      .replace(/E\^(\((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*\)|[a-zA-Z0-9_.\s\/\*\-\+^]+)/gi, 'Math.exp($1)') // Case for E^
 
       // Trigonometric functions (case insensitive input, convert to Math.standard)
       .replace(/\basin\s*\(([^)]*)\)/gi, 'Math.asin($1)') // Must be before sin
@@ -77,23 +89,13 @@ const evaluateEquationForX = (equationString: string, xValue: number): number | 
       .replace(/\bsqrt\s*\(([^)]*)\)/gi, 'Math.sqrt($1)')
       .replace(/\babs\s*\(([^)]*)\)/gi, 'Math.abs($1)')
 
-      // Exponentiation (superscripts, carets) - after specific e^
-      .replace(/²/g, '**2')
-      .replace(/³/g, '**3')
-      .replace(/\^/g, '**') // General caret for power
+      // 4. General exponentiation (carets) - after specific e^
+      .replace(/\^/g, '**') 
 
-      // Constants (after functions that might use 'e' or 'pi' as part of their name)
+      // 5. Constants (after functions that might use 'e' or 'pi' as part of their name)
       .replace(/\bpi\b/gi, 'Math.PI')
-      .replace(/\be\b/g, 'Math.E') // standalone 'e' for Math.E (MUST be after e^ replacement)
-
-      // Implicit multiplication (run these last as they are more general)
-      // number followed by letter or parenthesis: 2x -> 2*x, 2( -> 2*(
-      .replace(/(\d(?:\.\d+)?)([a-zA-Z(])/g, '$1*$2')
-      // letter or closing parenthesis followed by number: x2 -> x*2, )2 -> )*2
-      .replace(/([a-zA-Z)])(\d(?:\.\d+)?)/g, '$1*$2')
-      // closing parenthesis or letter followed by opening parenthesis or letter: )( -> )*(, x( -> x*(, xy -> x*y
-      .replace(/([)a-zA-Z])([(a-zA-Z])/g, '$1*$2');
-
+      .replace(/\be\b/g, 'Math.E'); // standalone 'e' for Math.E (MUST be after e^ replacement)
+      
     const func = new Function('x', `return ${preparedString}`);
     const result = func(xValue);
 
@@ -140,7 +142,7 @@ export default function AdvancedCalculatorPage() {
         },
       ]);
     } else {
-      console.warn("Attempted to store invalid calculator result:", result);
+      // console.warn("Attempted to store invalid calculator result:", result);
     }
   }, []);
 
@@ -157,7 +159,7 @@ export default function AdvancedCalculatorPage() {
       ]);
       setDirectInputValue("");
     } else {
-       console.warn("Attempted to store invalid direct input:", directInputValue);
+       // console.warn("Attempted to store invalid direct input:", directInputValue);
     }
   }, [directInputValue]);
 
@@ -283,3 +285,4 @@ export default function AdvancedCalculatorPage() {
     </div>
   );
 }
+
