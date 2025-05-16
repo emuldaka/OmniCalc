@@ -1,21 +1,21 @@
 // src/lib/advanced-calculator-engine.ts
 
 export interface AdvancedCalculatorState {
-  currentInput: string; // Current number being typed or result of last operation
-  expression: string; // Full mathematical expression string being built
-  displayValue: string; // Value shown on the main display line
-  isRadians: boolean; // True for radians, false for degrees (for trig functions)
-  secondFunctionActive: boolean; // True if "2nd" key is active
-  openParentheses: number; // Count of open parentheses
-  error: string | null; // Error message, if any
-  overwrite: boolean; // If next digit should overwrite currentInput or append
+  currentInput: string;
+  expression: string;
+  displayValue: string;
+  isRadians: boolean;
+  secondFunctionActive: boolean;
+  openParentheses: number;
+  error: string | null;
+  overwrite: boolean;
 }
 
 export const initialState: AdvancedCalculatorState = {
   currentInput: "0",
   expression: "",
   displayValue: "0",
-  isRadians: true, // Default to Radians
+  isRadians: true,
   secondFunctionActive: false,
   openParentheses: 0,
   error: null,
@@ -24,72 +24,75 @@ export const initialState: AdvancedCalculatorState = {
 
 export type AdvancedCalculatorAction =
   | { type: "INPUT_DIGIT"; payload: string }
-  | { type: "INPUT_CONSTANT"; payload: string } // 'π', 'e'
+  | { type: "INPUT_CONSTANT"; payload: string }
   | { type: "INPUT_DECIMAL" }
-  | { type: "INPUT_OPERATOR"; payload: string } // For binary operators +, -, ×, ÷, ^, mod
-  | { type: "INPUT_UNARY_OPERATOR"; payload: string } // For log, ln, sin, cos, tan, √, 1/x, neg
+  | { type: "INPUT_OPERATOR"; payload: string }
+  | { type: "INPUT_UNARY_OPERATOR"; payload: string } // For functions like sin(, log( that expect further input
+  | { type: "APPLY_POSTFIX_UNARY"; payload: "square" | "reciprocal" | "factorial" | "negate" | "cube" } // For immediate operations like x², 1/x, n!, +/-
   | { type: "INPUT_PARENTHESIS"; payload: "(" | ")" }
   | { type: "TOGGLE_SECOND_FUNCTION" }
-  | { type: "TOGGLE_ANGLE_MODE" } // Rad/Deg
+  | { type: "TOGGLE_ANGLE_MODE" }
   | { type: "EVALUATE" }
-  | { type: "CLEAR_ENTRY" } // CE
-  | { type: "CLEAR_ALL" }   // AC
+  | { type: "CLEAR_ENTRY" }
+  | { type: "CLEAR_ALL" }
   | { type: "BACKSPACE" };
 
-// Helper to sanitize and prepare expression for evaluation
+// Helper for factorial
+function factorial(n: number): number {
+  if (n < 0) throw new Error("Factorial of negative");
+  if (Math.floor(n) !== n) throw new Error("Factorial of non-integer");
+  if (n === 0 || n === 1) return 1;
+  if (n > 170) throw new Error("Factorial result too large"); // Max for JS standard numbers
+  let result = 1;
+  for (let i = 2; i <= n; i++) {
+    result *= i;
+  }
+  return result;
+}
+
 const prepareExpressionForEval = (expr: string, isRadians: boolean): string => {
   let prepared = expr;
-  
-  // Replace visual operators with JS operators/functions
   prepared = prepared.replace(/×/g, "*");
   prepared = prepared.replace(/÷/g, "/");
   prepared = prepared.replace(/π/g, "Math.PI");
-  prepared = prepared.replace(/e(?![a-zA-Z])/g, "Math.E"); // 'e' constant, not part of 'exp' or other words
-  prepared = prepared.replace(/\^/g, "**"); // Exponentiation
-  
-  // Modulo operator
+  prepared = prepared.replace(/(?<![a-zA-Z0-9_])e(?![a-zA-Z0-9_])/g, "Math.E"); // Whole word 'e'
+  prepared = prepared.replace(/\^/g, "**");
   prepared = prepared.replace(/mod/g, "%");
 
-  // Factorial: This is tricky as it's not a direct Math function and needs a loop or recursion.
-  // For simplicity in this step, we'll skip direct factorial replacement here.
-  // It would require parsing out the number before '!' and replacing 'N!' with a factorial function call.
-
-  // Square root
   prepared = prepared.replace(/√\(([^)]+)\)/g, "Math.sqrt($1)");
-  prepared = prepared.replace(/√(\d+(\.\d+)?)/g, "Math.sqrt($1)"); // For √number without parens
-
-  // Logs
   prepared = prepared.replace(/log\(([^)]+)\)/g, "Math.log10($1)");
   prepared = prepared.replace(/ln\(([^)]+)\)/g, "Math.log($1)");
   
-  // Inverse log/ln (10^x, e^x)
+  prepared = prepared.replace(/abs\(([^)]+)\)/g, "Math.abs($1)");
   prepared = prepared.replace(/10\^\(([^)]+)\)/g, "Math.pow(10, $1)");
-  prepared = prepared.replace(/e\^\(([^)]+)\)/g, "Math.exp($1)");
 
-  // Trigonometric functions
-  const trigReplacements: { [key: string]: string } = {
-    "sin(": "Math.sin(", "cos(": "Math.cos(", "tan(": "Math.tan(",
-    "asin(": "Math.asin(", "acos(": "Math.acos(", "atan(": "Math.atan(",
-  };
 
-  for (const func in trigReplacements) {
-    const regex = new RegExp(func.replace("(", "\\(") + "([^)]+)\\)", "g");
-    prepared = prepared.replace(regex, (match, angle) => {
-      if (isRadians || func.includes("asin") || func.includes("acos") || func.includes("atan")) { // Inverse trig functions return radians
-        return `${trigReplacements[func]}${angle})`;
-      } else { // Convert degrees to radians for standard trig
-        return `${trigReplacements[func]}(${angle} * Math.PI / 180)`;
+  const trigFuncs = ["sin", "cos", "tan", "asin", "acos", "atan"];
+  trigFuncs.forEach(func => {
+    const regex = new RegExp(`${func}\\(([^)]+)\\)`, "g");
+    prepared = prepared.replace(regex, (match, angleExpr) => {
+      // For inverse trig functions, the result is always in radians.
+      // For regular trig functions, convert degrees to radians if in DEG mode.
+      if (func.startsWith("a")) { // asin, acos, atan
+        return `Math.${func}(${angleExpr})`; // Result will be in Radians
+      } else if (!isRadians) { // sin, cos, tan in Degree mode
+        return `Math.${func}((${angleExpr}) * Math.PI / 180)`;
       }
+      return `Math.${func}(${angleExpr})`; // Radian mode or already handled
     });
-  }
+  });
   
+  // Handle scientific notation like 1.2E3, ensuring E isn't Math.E
+  // This is usually handled by JS native parsing, but ensure "E" is not replaced if it's for notation.
+  // The regex for 'e' constant above tries to avoid this: (?<![a-zA-Z0-9_])e(?![a-zA-Z0-9_])
+
   return prepared;
 };
 
 
 export function advancedCalculatorReducer(state: AdvancedCalculatorState, action: AdvancedCalculatorAction): AdvancedCalculatorState {
   if (state.error && action.type !== "CLEAR_ALL" && action.type !== "CLEAR_ENTRY") {
-    return state; // Only allow clear if in error state
+    return state;
   }
 
   let newExpression = state.expression;
@@ -99,12 +102,26 @@ export function advancedCalculatorReducer(state: AdvancedCalculatorState, action
 
   switch (action.type) {
     case "INPUT_DIGIT":
-      if (newOverwrite) {
+      if (newOverwrite || newCurrentInput === "Error") {
         newCurrentInput = action.payload;
-        newExpression += action.payload; // Append to expression if starting new number after op
+        if (state.overwrite && !["+", "-", "×", "÷", "^", "%", "("].includes(newExpression.slice(-1)) && newExpression !== "") {
+           // If overwriting after a full number, expression should also reset or append carefully
+           // For simplicity, if a full number result was there, new digit starts new expression segment
+           if (state.expression.endsWith("=")) newExpression = action.payload;
+           else newExpression += action.payload;
+        } else {
+          newExpression += action.payload;
+        }
+
       } else {
         newCurrentInput = newCurrentInput === "0" ? action.payload : newCurrentInput + action.payload;
-        newExpression = state.expression.slice(0, state.expression.length - state.currentInput.length) + newCurrentInput;
+        // Replace the old currentInput part in expression with the new one
+        const lastNumRegex = new RegExp(state.currentInput.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$');
+        if (state.currentInput !== "0" || state.expression.endsWith("0")) { // Avoid replacing "0" if it's part of "log(0"
+            newExpression = newExpression.replace(lastNumRegex, newCurrentInput);
+        } else { // If currentInput was "0" and expression didn't end with it (e.g. after an operator)
+            newExpression += newCurrentInput;
+        }
       }
       newOverwrite = false;
       newDisplayValue = newCurrentInput;
@@ -117,100 +134,197 @@ export function advancedCalculatorReducer(state: AdvancedCalculatorState, action
         newOverwrite = false;
       } else if (!newCurrentInput.includes(".")) {
         newCurrentInput += ".";
-        newExpression += ".";
+        newExpression += "."; // Append to expression directly
       }
       newDisplayValue = newCurrentInput;
       break;
 
     case "INPUT_CONSTANT": // π, e
-      newCurrentInput = action.payload; // Display constant symbol
+      newCurrentInput = action.payload;
       newExpression += action.payload;
-      newOverwrite = true; // Next op or number will use this
-      newDisplayValue = newCurrentInput;
+      newOverwrite = true;
+      newDisplayValue = action.payload; // Show the constant symbol
       break;
 
-    case "INPUT_OPERATOR": // +, -, ×, ÷, ^, mod
+    case "INPUT_OPERATOR": // +, -, ×, ÷, ^, mod, E (for sci notation)
       if (newCurrentInput === "Error") return state;
-      // Prevent multiple operators in a row, or leading operator if expression is empty
       const lastChar = newExpression.trim().slice(-1);
-      if (["+", "-", "×", "÷", "^", "%"].includes(lastChar) && action.payload !== "-") { // allow negative sign after operator
-          // Replace last operator if a new one is pressed (except for negation)
-          if (newExpression.length > 0) {
-            newExpression = newExpression.trim().slice(0, -1) + action.payload;
-          }
-      } else {
-        newExpression += action.payload;
+      const operators = ["+", "-", "×", "÷", "^", "%"];
+      if (operators.includes(lastChar) && action.payload !== "-" && !newExpression.endsWith("E")) {
+        if (newExpression.length > 0) {
+          newExpression = newExpression.trim().slice(0, -1) + action.payload;
+        }
+      } else if (action.payload === "E" && (newCurrentInput.includes("E") || newCurrentInput === "0" || newOverwrite)) {
+        // Prevent "EE" or "0E" or adding "E" after an operator
+      } else if (action.payload === "E") {
+        newExpression = newExpression.slice(0, newExpression.length - newCurrentInput.length) + newCurrentInput + "E";
+        newCurrentInput += "E";
+        newOverwrite = false; // Allow digits after E
       }
-      newCurrentInput = "0"; // Reset current input for next number
-      newOverwrite = true;
-      newDisplayValue = "0"; // Or keep showing expression? For now, reset for next input.
+      else {
+        newExpression += action.payload;
+        newOverwrite = true;
+      }
+      if (action.payload !== "E") { // Only reset currentInput if not adding scientific notation E
+        newCurrentInput = "0"; // Reset for next number
+        newDisplayValue = "0";
+      } else {
+        newDisplayValue = newCurrentInput;
+      }
       break;
       
-    case "INPUT_UNARY_OPERATOR": { // log(, ln(, sin(, cos(, tan(, √, 1/x, neg
-      const op = action.payload;
+    case "INPUT_UNARY_OPERATOR": // log(, ln(, sin(, cos(, tan(, √, abs( etc.
       if (newCurrentInput === "Error") return state;
+      const funcWithParen = `${action.payload}(`;
+      newExpression += funcWithParen;
+      newCurrentInput = "0";
+      newOverwrite = true; 
+      newDisplayValue = "0";
+      return { ...state, expression: newExpression, currentInput: "0", displayValue: "0", openParentheses: state.openParentheses +1, overwrite: true, error: null, secondFunctionActive: false };
 
-      if (op === "neg") {
-        if (newCurrentInput !== "0" && !newCurrentInput.startsWith("-")) {
-          newCurrentInput = "-" + newCurrentInput;
-           newExpression = state.expression.slice(0, state.expression.length - (newCurrentInput.length-1)) + newCurrentInput;
 
-        } else if (newCurrentInput.startsWith("-")) {
-          newCurrentInput = newCurrentInput.substring(1);
-          newExpression = state.expression.slice(0, state.expression.length - (newCurrentInput.length+1)) + newCurrentInput;
-        }
-        newDisplayValue = newCurrentInput;
-      } else if (op === "1/x") {
-         newExpression += `(1/${newCurrentInput})`;
-         // The evaluation will handle this. We set overwrite true so the result populates currentInput.
-         newOverwrite = true;
-      } else { // Functions like sin(, log( etc.
-        newExpression += `${op}(`; // Append function and open parenthesis
-        newCurrentInput = "0";
-        newOverwrite = true; // Ready for input inside parenthesis
-        return { ...state, expression: newExpression, currentInput: "0", displayValue: "0", openParentheses: state.openParentheses +1, overwrite: true, error: null };
+    case "APPLY_POSTFIX_UNARY": {
+      if (state.currentInput === "Error") return state;
+      if (state.overwrite && state.currentInput === "0" && state.expression === "") return state; // No op on initial 0
+
+      let numToOperateStr = state.currentInput;
+      let exprToUpdate = state.expression;
+
+      // If overwriting a result, operate on that result
+      if (state.overwrite && state.currentInput !== "0") {
+          // This means currentInput is a result of a previous op or a constant
+      } else if (state.overwrite && state.currentInput === "0") {
+          // This might happen if an operator was just pressed. We might want to operate on previous part of expression.
+          // This part is complex. For now, let's assume it operates on current visually displayed number.
+          // Or, if expression ends with operator, this implies currentInput might be "0" placeholder.
+          // Let's disable for "0" if overwrite is true unless it's "negate"
+          if (action.payload !== "negate") return state;
       }
-       newDisplayValue = newCurrentInput; // Should be result after eval for 1/x
-      break;
-    }
+      
+      let numToOperate = parseFloat(numToOperateStr);
+      if (isNaN(numToOperate) && action.payload !== "negate") return {...state, error: "Invalid input", displayValue: "Error"};
 
+      let result: number;
+      let resultStr: string;
+
+      try {
+        switch (action.payload) {
+          case "negate":
+            if (numToOperateStr === "0") { resultStr = "0"; break; }
+            result = numToOperate * -1;
+            resultStr = parseFloat(result.toPrecision(12)).toString();
+            break;
+          case "square": // x²
+            result = Math.pow(numToOperate, 2);
+            resultStr = parseFloat(result.toPrecision(12)).toString();
+            break;
+          case "cube": // x³
+             result = Math.pow(numToOperate, 3);
+             resultStr = parseFloat(result.toPrecision(12)).toString();
+             break;
+          case "reciprocal": // 1/x
+            if (numToOperate === 0) throw new Error("Div by zero");
+            result = 1 / numToOperate;
+            resultStr = parseFloat(result.toPrecision(12)).toString();
+            break;
+          case "factorial": // n!
+            result = factorial(numToOperate);
+            resultStr = parseFloat(result.toPrecision(12)).toString();
+            break;
+          default: return state;
+        }
+      } catch (e: any) {
+        return {...state, error: e.message || "Calculation Error", displayValue: "Error" };
+      }
+
+      if (resultStr && !Number.isFinite(parseFloat(resultStr))) return {...state, error: "Result too large", displayValue: "Error"};
+      
+      // Smartly update expression: replace the part of expression that was currentInput
+      if (exprToUpdate.endsWith(state.currentInput) && state.currentInput !== "0" && !state.overwrite) { // if currentInput was typed
+         newExpression = exprToUpdate.slice(0, exprToUpdate.length - state.currentInput.length) + resultStr;
+      } else if (state.overwrite && state.expression.endsWith("=")) { // After an evaluation
+         newExpression = resultStr;
+      } else if (state.currentInput === "0" && action.payload === "negate" && exprToUpdate.slice(-1) === "-") { // Toggling sign on a minus
+         newExpression = exprToUpdate.slice(0, -1); // remove trailing minus if it was for negation
+         resultStr = "0"; // No change to currentInput which remains 0
+      } else if (state.currentInput === "0" && action.payload === "negate" && !operators.includes(exprToUpdate.slice(-1))) {
+         newExpression += "-"; // Add negative sign if current input is 0 and no op before
+         resultStr = "0"; // currentInput remains 0, display is 0, expression gets "-"
+      }
+      else { // Append if it's a new operation or operating on a result that wasn't part of expression
+         newExpression = resultStr; // Or state.expression + resultStr if appropriate
+      }
+      // If currentInput was "0" and it was for negation, expression might just need "-" prepended or removed
+      // This logic for expression update is tricky.
+      // A safer bet: the postfix unary op finalizes the current number.
+      // The `expression` string is complex. If `currentInput` was `5` and expression was `10+5`.
+      // Pressing `x²` -> `currentInput` becomes `25`. `expression` should be `10+25`.
+      if (state.expression.endsWith(state.currentInput)) {
+        newExpression = state.expression.substring(0, state.expression.length - state.currentInput.length) + resultStr;
+      } else {
+        // If currentInput was '0' because an op was just pressed, or it was a result
+        // The expression needs to reflect the new value.
+        // This part needs to be careful not to duplicate.
+        // If expression was "10+" and currentInput "0" (placeholder), and negate is pressed, currentInput stays 0 but expression could be "10-"
+        // However, "negate" is special as it can apply to a "0" that's about to be typed.
+        // For other postfix, assume they operate on a concrete number.
+        newExpression = resultStr; // Fallback: expression becomes the result if it's unclear
+        if (state.previousOperand && state.operation) { // Check if there was a pending operation
+            newExpression = `${state.previousOperand}${state.operation}${resultStr}`;
+        }
+
+      }
+
+
+      return {
+        ...state,
+        currentInput: resultStr,
+        displayValue: resultStr,
+        expression: newExpression,
+        overwrite: true,
+        error: null,
+        secondFunctionActive: false, // Postfix ops usually reset 2nd
+      };
+    }
 
     case "INPUT_PARENTHESIS":
       if (action.payload === "(") {
         newExpression += "(";
-        return { ...state, expression: newExpression, openParentheses: state.openParentheses + 1, currentInput: "0", displayValue: "0", overwrite: true, error: null };
+        return { ...state, expression: newExpression, openParentheses: state.openParentheses + 1, currentInput: "0", displayValue: "0", overwrite: true, error: null, secondFunctionActive: false };
       } else { // ")"
         if (state.openParentheses > 0) {
           newExpression += ")";
-          return { ...state, expression: newExpression, openParentheses: state.openParentheses - 1, currentInput: state.currentInput, displayValue: state.currentInput, overwrite: true, error: null }; // currentInput might be the number before ')'
+          // currentInput might be the number just before ')'
+          return { ...state, expression: newExpression, openParentheses: state.openParentheses - 1, currentInput: state.currentInput, displayValue: state.currentInput, overwrite: true, error: null, secondFunctionActive: false };
         }
       }
       break;
 
     case "EVALUATE":
-      if (state.expression.trim() === "" || state.openParentheses > 0) {
-        return { ...state, error: state.openParentheses > 0 ? "Unclosed parentheses" : "Invalid Expression", displayValue: "Error" };
+      if (state.expression.trim() === "" || state.openParentheses !== 0) {
+        return { ...state, error: state.openParentheses !== 0 ? "Unclosed parentheses" : "Invalid Expression", displayValue: "Error" };
       }
       try {
-        const finalExpression = prepareExpressionForEval(state.expression, state.isRadians);
-        const result = new Function('return ' + finalExpression)();
+        const finalExpressionToEval = prepareExpressionForEval(state.expression, state.isRadians);
+        // console.log("Evaluating:", finalExpressionToEval);
+        const result = new Function('return ' + finalExpressionToEval)();
         
         if (typeof result === 'number' && !Number.isNaN(result) && Number.isFinite(result)) {
-          const resultStr = parseFloat(result.toPrecision(12)).toString(); // Limit precision
+          const resultStr = parseFloat(result.toPrecision(12)).toString();
           return {
-            ...initialState, // Reset most state
+            ...initialState,
             currentInput: resultStr,
             displayValue: resultStr,
-            expression: state.expression + "=", // Show original expression
-            isRadians: state.isRadians, // Persist mode
-            secondFunctionActive: false, // Reset 2nd func
+            expression: state.expression + "=", 
+            isRadians: state.isRadians,
+            secondFunctionActive: false,
             overwrite: true,
           };
         } else {
           return { ...state, error: "Calculation Error", displayValue: "Error" };
         }
       } catch (e) {
-        // console.error("Evaluation error:", e);
+        // console.error("Evaluation error:", e, "Original expr:", state.expression);
         return { ...state, error: "Syntax Error", displayValue: "Error" };
       }
 
@@ -218,27 +332,35 @@ export function advancedCalculatorReducer(state: AdvancedCalculatorState, action
       return { ...state, secondFunctionActive: !state.secondFunctionActive };
 
     case "TOGGLE_ANGLE_MODE":
-      return { ...state, isRadians: !state.isRadians };
+      return { ...state, isRadians: !state.isRadians, secondFunctionActive: false };
 
-    case "CLEAR_ENTRY": // CE
-      // Clears the current number input, but not the whole expression
-      if (!state.overwrite && state.currentInput !== "0") {
+    case "CLEAR_ENTRY": 
+      if (state.currentInput !== "0" && !state.overwrite) { // Typed something
         newExpression = state.expression.slice(0, state.expression.length - state.currentInput.length);
-      } // If overwrite is true, currentInput is "0" or result, CE shouldn't erase expression part from previous step
-      return { ...state, currentInput: "0", displayValue: "0", error: null, overwrite: true };
+      } // else if overwrite is true, currentInput is "0" or a result, CE acts like AC for current stage
+      return { ...state, currentInput: "0", displayValue: "0", error: null, overwrite: true, secondFunctionActive: false };
       
-    case "CLEAR_ALL": // AC
-      return { ...initialState, isRadians: state.isRadians }; // Keep angle mode
+    case "CLEAR_ALL": 
+      return { ...initialState, isRadians: state.isRadians };
 
     case "BACKSPACE":
-      if (newOverwrite || newCurrentInput === "0") break; // Nothing to delete or currentInput is a result
+      if (newOverwrite || newCurrentInput === "0" || newCurrentInput === "Error") break; 
       if (newCurrentInput.length === 1 || (newCurrentInput.startsWith("-") && newCurrentInput.length === 2)) {
+        const removedChar = newCurrentInput;
         newCurrentInput = "0";
         newOverwrite = true;
+        if (newExpression.endsWith(removedChar)) {
+          newExpression = newExpression.slice(0, newExpression.length - removedChar.length);
+        }
       } else {
+        const removedChar = newCurrentInput.slice(-1);
         newCurrentInput = newCurrentInput.slice(0, -1);
+         if (newExpression.endsWith(state.currentInput)) { // if currentInput was the last part of expression
+            newExpression = newExpression.slice(0, newExpression.length - 1);
+         } else if (newExpression.endsWith(removedChar)) { // more generic backspace from expression
+            newExpression = newExpression.slice(0, -1);
+         }
       }
-      newExpression = state.expression.slice(0, state.expression.length - 1); // Simplistic backspace for expression
       newDisplayValue = newCurrentInput;
       break;
 
@@ -256,71 +378,61 @@ export const scientificCalculatorButtons: Array<{
   secondLabel?: string;
   secondAction?: AdvancedCalculatorAction;
   className?: string;
-  span?: number; // For grid column span
+  colSpan?: number; 
 }> = [
   // Row 1
-  { label: "2nd", action: { type: "TOGGLE_SECOND_FUNCTION" }, className: "bg-primary/80 hover:bg-primary text-primary-foreground" },
-  { label: "π", action: { type: "INPUT_CONSTANT", payload: "π" } },
-  { label: "e", action: { type: "INPUT_CONSTANT", payload: "e" } },
+  { label: "2nd", action: { type: "TOGGLE_SECOND_FUNCTION" }, className: "bg-primary/70 hover:bg-primary/90 text-primary-foreground" },
+  { label: "Rad", action: { type: "TOGGLE_ANGLE_MODE" }, secondLabel: "Deg", secondAction: {type: "TOGGLE_ANGLE_MODE"}},
+  { label: "sin", action: { type: "INPUT_UNARY_OPERATOR", payload: "sin" }, secondLabel: "asin", secondAction: { type: "INPUT_UNARY_OPERATOR", payload: "asin" } },
+  { label: "cos", action: { type: "INPUT_UNARY_OPERATOR", payload: "cos" }, secondLabel: "acos", secondAction: { type: "INPUT_UNARY_OPERATOR", payload: "acos" } },
+  { label: "tan", action: { type: "INPUT_UNARY_OPERATOR", payload: "tan" }, secondLabel: "atan", secondAction: { type: "INPUT_UNARY_OPERATOR", payload: "atan" } },
   { label: "C", action: { type: "CLEAR_ALL" }, className: "bg-destructive/70 hover:bg-destructive text-destructive-foreground" },
   { label: "CE", action: { type: "CLEAR_ENTRY" }, className: "bg-destructive/70 hover:bg-destructive text-destructive-foreground" },
   { label: "⌫", action: { type: "BACKSPACE" } },
-  // Row 2
-  { label: "x²", action: { type: "INPUT_OPERATOR", payload: "^2" }, secondLabel: "x³", secondAction: { type: "INPUT_OPERATOR", payload: "^3" }}, // Simplified: x^2 will be expression string x + "^2"
-  { label: "1/x", action: { type: "INPUT_UNARY_OPERATOR", payload: "1/x" } },
-  { label: "|x|", action: { type: "INPUT_UNARY_OPERATOR", payload: "abs(" } }, // abs will become Math.abs(
-  { label: "exp", action: { type: "INPUT_OPERATOR", payload: "E" } }, // For scientific notation 1.2E3
-  { label: "mod", action: { type: "INPUT_OPERATOR", payload: "mod" } },
   { label: "÷", action: { type: "INPUT_OPERATOR", payload: "÷" }, className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
-  // Row 3
-  { label: "x^y", action: { type: "INPUT_OPERATOR", payload: "^" }, secondLabel: "y√x", secondAction: { type: "INPUT_OPERATOR", payload: "^(1/" } }, // Power root
+  
+  // Row 2
+  { label: "x^y", action: { type: "INPUT_OPERATOR", payload: "^" } }, // x power y
+  { label: "x²", action: { type: "APPLY_POSTFIX_UNARY", payload: "square" }, secondLabel: "x³", secondAction: { type: "APPLY_POSTFIX_UNARY", payload: "cube" } },
+  { label: "√", action: { type: "INPUT_UNARY_OPERATOR", payload: "√" } }, // Square root, expects (
+  { label: "log", action: { type: "INPUT_UNARY_OPERATOR", payload: "log" }, secondLabel: "10^x", secondAction: {type: "INPUT_UNARY_OPERATOR", payload: "10^"} }, // log base 10
+  { label: "ln", action: { type: "INPUT_UNARY_OPERATOR", payload: "ln" } }, // Natural log
   { label: "7", action: { type: "INPUT_DIGIT", payload: "7" } },
   { label: "8", action: { type: "INPUT_DIGIT", payload: "8" } },
   { label: "9", action: { type: "INPUT_DIGIT", payload: "9" } },
-  { label: "(", action: { type: "INPUT_PARENTHESIS", payload: "(" } },
   { label: "×", action: { type: "INPUT_OPERATOR", payload: "×" }, className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
-  // Row 4
-  { label: "10^x", action: { type: "INPUT_UNARY_OPERATOR", payload: "10^(" }, secondLabel: "log", secondAction: { type: "INPUT_UNARY_OPERATOR", payload: "log(" } }, // log base 10
+
+  // Row 3
+  { label: "1/x", action: { type: "APPLY_POSTFIX_UNARY", payload: "reciprocal" } },
+  { label: "π", action: { type: "INPUT_CONSTANT", payload: "π" } },
+  { label: "e", action: { type: "INPUT_CONSTANT", payload: "e" } },
+  { label: "(", action: { type: "INPUT_PARENTHESIS", payload: "(" } },
+  { label: ")", action: { type: "INPUT_PARENTHESIS", payload: ")" } },
   { label: "4", action: { type: "INPUT_DIGIT", payload: "4" } },
   { label: "5", action: { type: "INPUT_DIGIT", payload: "5" } },
   { label: "6", action: { type: "INPUT_DIGIT", payload: "6" } },
-  { label: ")", action: { type: "INPUT_PARENTHESIS", payload: ")" } },
   { label: "-", action: { type: "INPUT_OPERATOR", payload: "-" }, className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
-  // Row 5
-  { label: "e^x", action: { type: "INPUT_UNARY_OPERATOR", payload: "e^(" }, secondLabel: "ln", secondAction: { type: "INPUT_UNARY_OPERATOR", payload: "ln(" } }, // Natural log
+  
+  // Row 4
+  { label: "|x|", action: { type: "INPUT_UNARY_OPERATOR", payload: "abs"} }, // Absolute value
+  { label: "exp", action: { type: "INPUT_OPERATOR", payload: "E"} }, // For scientific notation like 1.2E3
+  { label: "mod", action: { type: "INPUT_OPERATOR", payload: "mod"} },
+  { label: "n!", action: { type: "APPLY_POSTFIX_UNARY", payload: "factorial" } },
+  { label: "±", action: { type: "APPLY_POSTFIX_UNARY", payload: "negate" } },
   { label: "1", action: { type: "INPUT_DIGIT", payload: "1" } },
   { label: "2", action: { type: "INPUT_DIGIT", payload: "2" } },
   { label: "3", action: { type: "INPUT_DIGIT", payload: "3" } },
-  { label: "√", action: { type: "INPUT_UNARY_OPERATOR", payload: "√" } }, // Square root
   { label: "+", action: { type: "INPUT_OPERATOR", payload: "+" }, className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
-  // Row 6
-  { label: "Rad/Deg", action: { type: "TOGGLE_ANGLE_MODE" } },
-  { label: "sin", action: { type: "INPUT_UNARY_OPERATOR", payload: "sin(" }, secondLabel: "asin", secondAction: { type: "INPUT_UNARY_OPERATOR", payload: "asin(" } },
-  { label: "cos", action: { type: "INPUT_UNARY_OPERATOR", payload: "cos(" }, secondLabel: "acos", secondAction: { type: "INPUT_UNARY_OPERATOR", payload: "acos(" } },
-  { label: "tan", action: { type: "INPUT_UNARY_OPERATOR", payload: "tan(" }, secondLabel: "atan", secondAction: { type: "INPUT_UNARY_OPERATOR", payload: "atan(" } },
-  { label: "0", action: { type: "INPUT_DIGIT", payload: "0" } },
-  { label: ".", action: { type: "INPUT_DECIMAL" } },
-  // Row 7 - Spanning some buttons maybe
-  { label: "±", action: { type: "INPUT_UNARY_OPERATOR", payload: "neg" } }, // Negate current number
-  // { label: "MR", action: { type: "MEMORY_RECALL" } }, // Memory functions if added
-  // { label: "M+", action: { type: "MEMORY_ADD" } },
-  { label: "=", action: { type: "EVALUATE" }, className: "col-span-2 bg-primary hover:bg-primary/90 text-primary-foreground" }, // Make equals span more columns
-];
-// Note: x², x³, |x|, exp, y√x, 10^x, e^x will need specific handling in INPUT_UNARY_OPERATOR or INPUT_OPERATOR
-// to correctly form expressions like 'Math.pow(current, 2)' or 'Math.abs(current)'.
-// The current 'INPUT_OPERATOR' for x^y works by adding '^' to expression. x² can be `^(2)`.
-// For simplicity some functions like `x²` `10^x` are treated as unary operators that start a sequence e.g. `10^(`
-// The current input of x² might be better as currentInput + "^(2)" or it should directly evaluate currentInput^2
-// The current engine needs more robust logic for unary vs binary ops and expression building.
-// For instance, 'sin(' should make the calculator expect input for the sin function.
 
-// The `x²` button is simplified to be an operator that appends "^2" to the expression. 
-// A more robust solution would evaluate `Math.pow(currentNumber, 2)` immediately
-// or integrate it better into the expression parser.
-// Similarly for `10^x` which becomes `10^(`. A dedicated unary action would be `Math.pow(10, currentInput)`.
-// The current approach relies heavily on the `prepareExpressionForEval` to correctly form Math calls.
-// The `INPUT_UNARY_OPERATOR` logic needs significant expansion to handle cases like `sin`, `cos`
-// correctly, potentially by wrapping the `currentInput` or preparing for new input within `Math.sin(...)`.
-// The current implementation of `INPUT_UNARY_OPERATOR` for `sin(` just appends `sin(` to the expression.
-// This structure provides a foundation. Each specific function's interaction with the expression string and
-// current input needs careful implementation within the reducer.
+  // Row 5 - 9 columns
+  // Invisible placeholders or merge cells to make 0 span 2 and = span 2. 5 buttons needed.
+  // Span for 0, ., =. Total 9.
+  // (empty), (empty), (empty), (empty), (empty)
+  // (0 span 2), (.), (= span 2)
+  // Let's make this row have fewer real buttons and rely on colSpan or adjust.
+  // We need 4 empty spots if 0 is colSpan 2, . is 1, = is 2. (2+1+2 = 5). 9-5 = 4 empty.
+  { label: "", action: {type: "INPUT_DIGIT", payload:""}, className:"invisible", colSpan: 4}, // Placeholder for spacing
+  { label: "0", action: { type: "INPUT_DIGIT", payload: "0" }, colSpan: 2 },
+  { label: ".", action: { type: "INPUT_DECIMAL" } },
+  { label: "=", action: { type: "EVALUATE" }, className: "bg-primary hover:bg-primary/90 text-primary-foreground", colSpan: 2 },
+];
