@@ -237,8 +237,10 @@ export function advancedCalculatorReducer(state: AdvancedCalculatorState, action
           const lastCharInExpr = newExpression.slice(-1);
           if (lastCharInExpr === "+") newExpression = newExpression.slice(0, -1) + "-";
           else if (lastCharInExpr === "-") newExpression = newExpression.slice(0, -1) + "+";
-          else if (lastCharInExpr === "×" || lastCharInExpr === "÷" || lastCharInExpr === "^") newExpression += "-"; // Append negative sign
           else if (newExpression === "" || newExpression.endsWith("(") || newExpression.endsWith("=")) newExpression += "-"; // Start with negative
+          // If after *, /, ^ and current input is "0", just append "-"
+          else if (["×", "÷", "^"].includes(lastCharInExpr)) newExpression += "-";
+
           resultStr = "0"; // Current input for typing remains 0
       }
        else { 
@@ -276,7 +278,18 @@ export function advancedCalculatorReducer(state: AdvancedCalculatorState, action
         return { ...state, error: state.openParentheses !== 0 ? "Unclosed parentheses" : "Invalid Expression", displayValue: "Error" };
       }
       try {
-        const finalExpressionToEval = prepareExpressionForEval(state.expression, state.isRadians);
+        let exprToEval = state.expression;
+        // Ensure the last character is not an operator if it is, it might need to be handled or removed
+        const lastCharInExpr = exprToEval.trim().slice(-1);
+        if (operators.includes(lastCharInExpr)) {
+          // Option 1: Error out
+          // return { ...state, error: "Expression ends with operator", displayValue: "Error" };
+          // Option 2: Try to remove it (this might be too aggressive or lead to unexpected results)
+          // exprToEval = exprToEval.trim().slice(0, -1); 
+        }
+
+
+        const finalExpressionToEval = prepareExpressionForEval(exprToEval, state.isRadians);
         const result = new Function('return ' + finalExpressionToEval)();
         
         if (typeof result === 'number' && !Number.isNaN(result) && Number.isFinite(result)) {
@@ -294,6 +307,7 @@ export function advancedCalculatorReducer(state: AdvancedCalculatorState, action
           return { ...state, error: "Calculation Error", displayValue: "Error" };
         }
       } catch (e) {
+        // console.error("Evaluation error:", e, "Original expr:", state.expression, "Prepared expr:", prepareExpressionForEval(state.expression, state.isRadians));
         return { ...state, error: "Syntax Error", displayValue: "Error" };
       }
 
@@ -347,7 +361,6 @@ export const scientificCalculatorButtons: Array<{
   secondLabel?: string;
   secondAction?: AdvancedCalculatorAction;
   className?: string;
-  colSpan?: number;
 }> = [
   // Row 1
   { label: "2nd", action: { type: "TOGGLE_SECOND_FUNCTION" }, className: "bg-primary hover:bg-primary/80 text-primary-foreground" },
@@ -372,8 +385,8 @@ export const scientificCalculatorButtons: Array<{
   { label: "×", action: { type: "INPUT_OPERATOR", payload: "×" }, className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
 
   // Row 3
-  { label: "(", action: { type: "INPUT_PARENTHESIS", payload: "(" } },
-  { label: ")", action: { type: "INPUT_PARENTHESIS", payload: ")" } },
+  { label: "(", action: { type: "INPUT_PARENTHESIS", payload: "(" }, className: "bg-secondary/90 hover:bg-secondary/80" },
+  { label: ")", action: { type: "INPUT_PARENTHESIS", payload: ")" }, className: "bg-secondary/90 hover:bg-secondary/80" },
   { label: "1/x", action: { type: "APPLY_POSTFIX_UNARY", payload: "reciprocal" } },
   { label: "n!", action: { type: "APPLY_POSTFIX_UNARY", payload: "factorial" } },
   { label: "π", action: { type: "INPUT_CONSTANT", payload: "π" } },
@@ -386,11 +399,10 @@ export const scientificCalculatorButtons: Array<{
   { label: "e", action: { type: "INPUT_CONSTANT", payload: "e" } },
   { label: "C", action: { type: "CLEAR_ALL" }, className: "bg-destructive hover:bg-destructive/80 text-destructive-foreground" },
   { label: "CE", action: { type: "CLEAR_ENTRY" }, className: "bg-destructive hover:bg-destructive/80 text-destructive-foreground" },
-  { label: "⌫", action: { type: "BACKSPACE" } },
+  { label: "⌫", action: { type: "BACKSPACE" }, className: "bg-red-600 hover:bg-red-500 text-primary-foreground" },
   { label: "=", action: { type: "EVALUATE" }, className: "bg-primary hover:bg-primary/90 text-primary-foreground" },
   { label: "0", action: { type: "INPUT_DIGIT", payload: "0" } },
-  { label: ".", action: { type: "INPUT_DECIMAL" } },
-  { label: "±", action: { type: "APPLY_POSTFIX_UNARY", payload: "negate" } },
+  { label: ".", action: { type: "INPUT_DECIMAL" }, className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
+  { label: "±", action: { type: "APPLY_POSTFIX_UNARY", payload: "negate" }, className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
   { label: "+", action: { type: "INPUT_OPERATOR", payload: "+" }, className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
 ];
-
