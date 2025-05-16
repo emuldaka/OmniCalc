@@ -44,37 +44,72 @@ const evaluateEquationForX = (equationString: string, xValue: number): number | 
   try {
     let exprToEvaluate = equationString;
 
-    // Regex to match "f(x)=", "y=", "g(x)=", etc., case-insensitively, and capture the expression part.
+    // Handle f(x)=, y=, g(x)= prefixes
     const prefixMatch = exprToEvaluate.match(/^(?:f\(x\)|y|g\(x\))\s*=\s*(.*)/i);
     if (prefixMatch && prefixMatch[1]) {
       exprToEvaluate = prefixMatch[1];
     }
 
-    // Order of replacements can be important.
-    const preparedString = exprToEvaluate
-      .replace(/²/g, '**2')       // Replace superscript 2
-      .replace(/³/g, '**3')       // Replace superscript 3
-      .replace(/\^/g, '**')      // Replace ^ with ** for JS exponentiation
-      .replace(/(\d)([a-zA-Z(])/g, '$1*$2') // Ensure implicit multiplication like 2x or 2( becomes 2*x or 2*(
-      .replace(/([a-zA-Z)])(\d)/g, '$1*$2') // Ensure implicit multiplication like x2 or )2 becomes x*2 or )*2
-      .replace(/([)a-zA-Z])([(a-zA-Z])/g, '$1*$2'); // Ensure implicit multiplication like ) ( or x ( or x y becomes )*( or x*( or x*y
+    // Order of replacements is important
+    let preparedString = exprToEvaluate
+      // Specific function patterns (e.g., e^, sqrt, trig, log)
+      // Ensure e^ is matched before standalone 'e' might be converted to Math.E
+      // Regex for e^(<balanced_parentheses_expr>) or e^<simple_expr_with_vars_ops>
+      .replace(/e\^(\((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*\)|[a-zA-Z0-9_.\s\/\*\-\+]+)/gi, 'Math.exp($1)')
+      .replace(/E\^(\((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*\)|[a-zA-Z0-9_.\s\/\*\-\+]+)/gi, 'Math.exp($1)') // Case for E^
 
+      // Trigonometric functions (case insensitive input, convert to Math.standard)
+      .replace(/\basin\s*\(([^)]*)\)/gi, 'Math.asin($1)') // Must be before sin
+      .replace(/\barcsin\s*\(([^)]*)\)/gi, 'Math.asin($1)')
+      .replace(/\bacos\s*\(([^)]*)\)/gi, 'Math.acos($1)') // Must be before cos
+      .replace(/\barccos\s*\(([^)]*)\)/gi, 'Math.acos($1)')
+      .replace(/\batan\s*\(([^)]*)\)/gi, 'Math.atan($1)') // Must be before tan
+      .replace(/\barctan\s*\(([^)]*)\)/gi, 'Math.atan($1)')
+      .replace(/\bsin\s*\(([^)]*)\)/gi, 'Math.sin($1)')
+      .replace(/\bcos\s*\(([^)]*)\)/gi, 'Math.cos($1)')
+      .replace(/\btan\s*\(([^)]*)\)/gi, 'Math.tan($1)')
+      
+      // Logarithmic functions
+      .replace(/\blog\s*\(([^)]*)\)/gi, 'Math.log10($1)') // log base 10
+      .replace(/\bln\s*\(([^)]*)\)/gi, 'Math.log($1)')   // natural log
+
+      // Other math functions
+      .replace(/\bsqrt\s*\(([^)]*)\)/gi, 'Math.sqrt($1)')
+      .replace(/\babs\s*\(([^)]*)\)/gi, 'Math.abs($1)')
+
+      // Exponentiation (superscripts, carets) - after specific e^
+      .replace(/²/g, '**2')
+      .replace(/³/g, '**3')
+      .replace(/\^/g, '**') // General caret for power
+
+      // Constants (after functions that might use 'e' or 'pi' as part of their name)
+      .replace(/\bpi\b/gi, 'Math.PI')
+      .replace(/\be\b/g, 'Math.E') // standalone 'e' for Math.E (MUST be after e^ replacement)
+
+      // Implicit multiplication (run these last as they are more general)
+      // number followed by letter or parenthesis: 2x -> 2*x, 2( -> 2*(
+      .replace(/(\d(?:\.\d+)?)([a-zA-Z(])/g, '$1*$2')
+      // letter or closing parenthesis followed by number: x2 -> x*2, )2 -> )*2
+      .replace(/([a-zA-Z)])(\d(?:\.\d+)?)/g, '$1*$2')
+      // closing parenthesis or letter followed by opening parenthesis or letter: )( -> )*(, x( -> x*(, xy -> x*y
+      .replace(/([)a-zA-Z])([(a-zA-Z])/g, '$1*$2');
 
     const func = new Function('x', `return ${preparedString}`);
     const result = func(xValue);
+
     if (typeof result === 'number' && isFinite(result)) {
       return result;
     }
-    return null;
+    return null; // Handles NaN, Infinity from evaluation
   } catch (error) {
-    // console.error(`Error evaluating equation "${equationString}" for x=${xValue}:`, error);
+    // console.error(`Error evaluating equation "${equationString}" (prepared as "${preparedString}") for x=${xValue}:`, error);
     return null;
   }
 };
 
 const generatePointsForEquation = (equationString: string, xMin = -10, xMax = 10, numPoints = 100): GraphDataPoint[] => {
   const points: GraphDataPoint[] = [];
-  if (numPoints <= 1) return points; // Need at least 2 points to make a line or meaningful plot
+  if (numPoints <= 1) return points; 
   const step = (xMax - xMin) / (numPoints - 1);
   for (let i = 0; i < numPoints; i++) {
     const x = xMin + i * step;
@@ -136,7 +171,7 @@ export default function AdvancedCalculatorPage() {
       ...prev,
       {
         id: `eq-${Date.now()}`,
-        equationString: equationString, // Store the raw user input for display
+        equationString: equationString, 
         plotted: false,
         color: lineColors[prev.length % lineColors.length],
       },
@@ -164,9 +199,9 @@ export default function AdvancedCalculatorPage() {
       .filter((eq) => eq.plotted)
       .map((eq) => ({
         id: eq.id,
-        points: generatePointsForEquation(eq.equationString), // Pass raw string
+        points: generatePointsForEquation(eq.equationString),
         color: eq.color,
-        name: eq.equationString, // Use raw string for legend name
+        name: eq.equationString, 
       }));
   }, [storedEquations]);
 
@@ -248,5 +283,3 @@ export default function AdvancedCalculatorPage() {
     </div>
   );
 }
-
-    
