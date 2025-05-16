@@ -57,7 +57,6 @@ export default function HomePage() {
       </div>
 
       <footer className="mt-16 text-center text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} OmniCalc. Powered by AI.</p>
       </footer>
     </div>
   );
