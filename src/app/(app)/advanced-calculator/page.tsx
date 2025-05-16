@@ -13,43 +13,49 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusCircle, BarChartHorizontalBig, ListChecks, FunctionSquare } from "lucide-react";
 
-// For numeric stored values (no longer plotable)
 export interface StoredValue {
   id: string;
   value: number;
   label: string;
 }
 
-// For stored equations (plotable)
 export interface EquationItem {
   id: string;
   equationString: string;
   plotted: boolean;
-  color: string; // For graph line color
+  color: string; 
 }
 
-// For data points on the graph (x, y pairs)
 export type GraphDataPoint = {
   x: number;
   y: number;
 };
 
-// Data structure for a single function line on the graph
 export interface FunctionPlotData {
     id: string;
     points: GraphDataPoint[];
     color: string;
-    name: string; // e.g., the equation string
+    name: string; 
 }
 
 const lineColors = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
 
-// Simple equation evaluation (assumes 'x' is the variable)
 const evaluateEquationForX = (equationString: string, xValue: number): number | null => {
   try {
-    // Basic sanitization/preparation - replace common math functions if needed
-    // For now, direct evaluation with 'x' as a parameter
-    const preparedString = equationString.replace(/\^/g, '**'); // Replace ^ with ** for JS exponentiation
+    let exprToEvaluate = equationString;
+
+    // Regex to match "f(x)=", "y=", "g(x)=", etc., case-insensitively, and capture the expression part.
+    const prefixMatch = exprToEvaluate.match(/^(?:f\(x\)|y|g\(x\))\s*=\s*(.*)/i);
+    if (prefixMatch && prefixMatch[1]) {
+      exprToEvaluate = prefixMatch[1];
+    }
+
+    const preparedString = exprToEvaluate
+      .replace(/\^/g, '**') // Replace ^ with ** for JS exponentiation
+      .replace(/(\d)x/g, '$1*x') // Ensure implicit multiplication like 2x becomes 2*x
+      .replace(/x(\d)/g, 'x*$1'); // Ensure implicit multiplication like x2 becomes x*2 (less common but good practice)
+
+
     const func = new Function('x', `return ${preparedString}`);
     const result = func(xValue);
     if (typeof result === 'number' && isFinite(result)) {
@@ -78,7 +84,7 @@ const generatePointsForEquation = (equationString: string, xMin = -10, xMax = 10
 
 export default function AdvancedCalculatorPage() {
   const [storedValues, setStoredValues] = useState<StoredValue[]>([]);
-  const [directInputValue, setDirectInputValue] = useState<string>(""); // For numeric input
+  const [directInputValue, setDirectInputValue] = useState<string>(""); 
 
   const [storedEquations, setStoredEquations] = useState<EquationItem[]>([]);
 
@@ -119,14 +125,13 @@ export default function AdvancedCalculatorPage() {
     setStoredValues((prev) => prev.filter((val) => val.id !== id));
   }, []);
 
-  // Equation Management
   const handleAddEquation = useCallback((equationString: string) => {
     if (!equationString.trim()) return;
     setStoredEquations((prev) => [
       ...prev,
       {
         id: `eq-${Date.now()}`,
-        equationString,
+        equationString: equationString, // Store the raw user input for display
         plotted: false,
         color: lineColors[prev.length % lineColors.length],
       },
@@ -154,9 +159,9 @@ export default function AdvancedCalculatorPage() {
       .filter((eq) => eq.plotted)
       .map((eq) => ({
         id: eq.id,
-        points: generatePointsForEquation(eq.equationString),
+        points: generatePointsForEquation(eq.equationString), // Pass raw string
         color: eq.color,
-        name: eq.equationString,
+        name: eq.equationString, // Use raw string for legend name
       }));
   }, [storedEquations]);
 
@@ -177,7 +182,7 @@ export default function AdvancedCalculatorPage() {
         {/* Column 1: Calculator, Direct Numeric Input, and Stored Numeric Values */}
         <div className="flex flex-col space-y-4">
           <AdvancedCalculatorLayout onStoreResult={handleStoreResultFromCalculator} />
-          <Card className="shadow-md">
+           <Card className="shadow-md">
             <CardHeader>
               <CardTitle className="text-xl text-primary flex items-center">
                 <PlusCircle className="mr-2 h-5 w-5"/> Add Numeric Value to Storage
