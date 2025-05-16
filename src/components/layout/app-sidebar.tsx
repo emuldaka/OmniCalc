@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calculator, ArrowRightLeft, Settings, Sigma, Bot } from "lucide-react";
+import { Calculator, ArrowRightLeft, Settings, Sigma, Bot, BeakerIcon } from "lucide-react"; // Added BeakerIcon
 import {
   Sidebar,
   SidebarHeader,
@@ -13,12 +13,13 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarTrigger,
-} from "@/components/ui/sidebar"; // Assuming sidebar.tsx is in ui
+} from "@/components/ui/sidebar"; 
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/calculator", label: "Calculator", icon: Calculator },
   { href: "/converter", label: "Converter", icon: ArrowRightLeft },
+  { href: "/advanced-calculator", label: "Advanced Calc", icon: BeakerIcon }, // New item
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
