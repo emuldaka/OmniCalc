@@ -217,7 +217,7 @@ export default function AdvancedCalculatorPage() {
               <Button onClick={handleAddDirectValue}>Add Value</Button>
             </CardContent>
           </Card>
-           <Card className="shadow-md lg:max-w-md self-end w-full"> {/* Narrower and aligned to column */}
+           <Card className="shadow-md w-full">
             <CardHeader>
               <CardTitle className="text-xl text-primary flex items-center">
                 <ListChecks className="mr-3 h-6 w-6" /> Stored Numeric Values
