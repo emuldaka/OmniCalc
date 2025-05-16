@@ -50,10 +50,14 @@ const evaluateEquationForX = (equationString: string, xValue: number): number | 
       exprToEvaluate = prefixMatch[1];
     }
 
+    // Order of replacements can be important.
     const preparedString = exprToEvaluate
-      .replace(/\^/g, '**') // Replace ^ with ** for JS exponentiation
-      .replace(/(\d)x/g, '$1*x') // Ensure implicit multiplication like 2x becomes 2*x
-      .replace(/x(\d)/g, 'x*$1'); // Ensure implicit multiplication like x2 becomes x*2 (less common but good practice)
+      .replace(/²/g, '**2')       // Replace superscript 2
+      .replace(/³/g, '**3')       // Replace superscript 3
+      .replace(/\^/g, '**')      // Replace ^ with ** for JS exponentiation
+      .replace(/(\d)([a-zA-Z(])/g, '$1*$2') // Ensure implicit multiplication like 2x or 2( becomes 2*x or 2*(
+      .replace(/([a-zA-Z)])(\d)/g, '$1*$2') // Ensure implicit multiplication like x2 or )2 becomes x*2 or )*2
+      .replace(/([)a-zA-Z])([(a-zA-Z])/g, '$1*$2'); // Ensure implicit multiplication like ) ( or x ( or x y becomes )*( or x*( or x*y
 
 
     const func = new Function('x', `return ${preparedString}`);
@@ -70,6 +74,7 @@ const evaluateEquationForX = (equationString: string, xValue: number): number | 
 
 const generatePointsForEquation = (equationString: string, xMin = -10, xMax = 10, numPoints = 100): GraphDataPoint[] => {
   const points: GraphDataPoint[] = [];
+  if (numPoints <= 1) return points; // Need at least 2 points to make a line or meaningful plot
   const step = (xMax - xMin) / (numPoints - 1);
   for (let i = 0; i < numPoints; i++) {
     const x = xMin + i * step;
@@ -182,7 +187,7 @@ export default function AdvancedCalculatorPage() {
         {/* Column 1: Calculator, Direct Numeric Input, and Stored Numeric Values */}
         <div className="flex flex-col space-y-4">
           <AdvancedCalculatorLayout onStoreResult={handleStoreResultFromCalculator} />
-           <Card className="shadow-md">
+          <Card className="shadow-md">
             <CardHeader>
               <CardTitle className="text-xl text-primary flex items-center">
                 <PlusCircle className="mr-2 h-5 w-5"/> Add Numeric Value to Storage
@@ -243,3 +248,5 @@ export default function AdvancedCalculatorPage() {
     </div>
   );
 }
+
+    
