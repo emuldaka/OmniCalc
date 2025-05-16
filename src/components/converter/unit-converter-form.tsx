@@ -1,3 +1,4 @@
+
 // src/components/converter/unit-converter-form.tsx
 "use client";
 
@@ -18,28 +19,32 @@ interface UnitConverterFormProps {
 }
 
 export function UnitConverterForm({ category, onAiResult }: UnitConverterFormProps) {
-  const [inputValue, setInputValue] = useState<string>("1");
+  const getInitialInputValue = (catId: string) => {
+    return catId === 'timezone' ? "12:00" : "1";
+  };
+
+  const [inputValue, setInputValue] = useState<string>(getInitialInputValue(category.id));
   const [fromUnit, setFromUnit] = useState<string>(category.units[0]?.id || "");
   const [toUnit, setToUnit] = useState<string>(category.units[1]?.id || category.units[0]?.id || "");
   const [outputValue, setOutputValue] = useState<string>("");
   const { formatNumber } = useSettings();
 
   const performConversion = useCallback(() => {
-    const numericInput = parseFloat(inputValue);
-    if (isNaN(numericInput)) {
-      setOutputValue("Invalid input");
-      return;
-    }
     if (!fromUnit || !toUnit) {
         setOutputValue("Select units");
         return;
     }
-
-    const result = convertUnits(numericInput, fromUnit, toUnit, category.id);
-    if (typeof result === 'number') {
+    // Input value is always a string. The conversion function for the category handles parsing.
+    const result = convertUnits(inputValue, fromUnit, toUnit, category.id);
+    
+    if (category.id === 'timezone') {
+        // Timezone conversion returns a string "HH:MM" or an error message string
+        setOutputValue(result as string); 
+    } else if (typeof result === 'number') {
       setOutputValue(formatNumber(result));
     } else {
-      setOutputValue(result); // Error message string
+      // This handles error strings from numeric conversions (e.g., "Invalid input")
+      setOutputValue(result); 
     }
   }, [inputValue, fromUnit, toUnit, category.id, formatNumber]);
 
@@ -51,7 +56,7 @@ export function UnitConverterForm({ category, onAiResult }: UnitConverterFormPro
   useEffect(() => {
     setFromUnit(category.units[0]?.id || "");
     setToUnit(category.units[1]?.id || category.units[0]?.id || "");
-    setInputValue("1"); // Reset input value as well
+    setInputValue(getInitialInputValue(category.id));
   }, [category]);
 
 
@@ -59,43 +64,29 @@ export function UnitConverterForm({ category, onAiResult }: UnitConverterFormPro
     const currentFrom = fromUnit;
     setFromUnit(toUnit);
     setToUnit(currentFrom);
-    // Input value remains, output will recalculate due to useEffect on fromUnit/toUnit
   };
   
   const handleReset = () => {
-    setInputValue("1");
+    setInputValue(getInitialInputValue(category.id));
     setFromUnit(category.units[0]?.id || "");
     setToUnit(category.units[1]?.id || category.units[0]?.id || "");
-    // outputValue will update via useEffect
   };
 
-  // Handler for AI results specific to converter
-  // This would be called from a parent if AI input field was part of this component tree
-  // Or via global state/context if AI input is in header
   const handleAiConverterResult = (result: string | number, expression: string) => {
     if (typeof result === 'number') {
-      // Attempt to set input value, assuming AI gives a raw number
-      // This part is tricky as AI might give "10 meters" instead of just "10"
-      // For now, if AI gives a number, it's treated as the *result* of a conversion.
-      // A more sophisticated AI handler would parse units and values.
       setOutputValue(formatNumber(result));
-      // Maybe try to update inputValue if the expression implies an input
       const match = expression.match(/^(\d+(\.\d+)?)/);
       if (match && match[1]) {
         setInputValue(match[1]);
       }
-    } else {
-      setOutputValue(result); // Error message
+    } else { // result is an error string
+      setOutputValue(result);
     }
-    // Potentially update fromUnit and toUnit if AI can provide that info
-    // toast({ title: "AI Conversion", description: `${expression} = ${formatNumber(result)}` });
   };
   
-  // Link AI handler if provided
   useEffect(() => {
     if (onAiResult) {
-      // This mechanism would need refinement for how AI input specifically targets converter fields.
-      // Example: onAiResult might need to be invoked by a global AI input handler.
+      // This mechanism needs refinement for AI to target converter fields.
     }
   }, [onAiResult]);
 
@@ -108,7 +99,8 @@ export function UnitConverterForm({ category, onAiResult }: UnitConverterFormPro
             <Label htmlFor={`input-value-${category.id}`} className="font-medium text-primary">Value</Label>
             <Input
               id={`input-value-${category.id}`}
-              type="number"
+              type={category.id === 'timezone' ? "time" : "text"} // Use "text" for general numeric to allow flexible input before parseFloat
+              inputMode={category.id === 'timezone' ? undefined : "decimal"}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               className="text-lg p-3"
@@ -175,3 +167,5 @@ export function UnitConverterForm({ category, onAiResult }: UnitConverterFormPro
     </Card>
   );
 }
+
+  
