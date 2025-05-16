@@ -29,7 +29,8 @@ export function FxCalculatorSection({ onAddEquation }: FxCalculatorSectionProps)
           <FunctionSquare className="mr-3 h-7 w-7" /> f(x) Equation Definer
         </CardTitle>
         <CardDescription>
-          Enter an equation in terms of 'x' (e.g., "2*x + 1", "x^2 - 5*x").
+          Enter an equation in terms of 'x'. You can use prefixes like "f(x) =" or "y =".
+          Example: "f(x) = x**2 - 5*x + 3" or "0.5*x + 2".
           Use '**' for exponentiation (e.g., "x**3" for x cubed).
         </CardDescription>
       </CardHeader>
@@ -39,7 +40,7 @@ export function FxCalculatorSection({ onAddEquation }: FxCalculatorSectionProps)
             type="text"
             value={equationInput}
             onChange={(e) => setEquationInput(e.target.value)}
-            placeholder="e.g., 0.5*x**2 - 3*x + 4"
+            placeholder="e.g., f(x) = 0.5*x**2 - 3*x + 4"
             className="flex-grow"
           />
           <Button onClick={handleAddClick} aria-label="Add equation to storage">
@@ -48,6 +49,7 @@ export function FxCalculatorSection({ onAddEquation }: FxCalculatorSectionProps)
         </div>
          <p className="text-xs text-muted-foreground">
           Supported operators: +, -, *, /, ** (power). Use Math object for functions e.g. Math.sin(x).
+          Implicit multiplication (e.g., "2x") will be interpreted as "2*x".
         </p>
       </CardContent>
     </Card>
