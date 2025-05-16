@@ -1,12 +1,13 @@
+
 // src/lib/unit-definitions.ts
-import { Ruler, Maximize, Box, Scale, Thermometer, Clock, DollarSign } from 'lucide-react';
+import { Ruler, Maximize, Box, Scale, Thermometer, Clock, DollarSign, Globe } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export interface Unit {
   id: string;
   name: string;
   symbol: string;
-  baseFactor: number; // Factor to convert from this unit to the base unit of the category
+  baseFactor: number; // Factor to convert to base unit, or UTC offset for timezones
 }
 
 export interface UnitCategory {
@@ -15,10 +16,85 @@ export interface UnitCategory {
   icon: LucideIcon;
   baseUnit: string; // ID of the base unit for this category
   units: Unit[];
-  conversionFormula?: (value: number, fromFactor: number, toFactor: number, fromUnitId?: string, toUnitId?: string) => number;
+  // Takes raw string input, from unit, to unit, and category details.
+  // Formula is responsible for parsing inputValue if it's numeric.
+  conversionFormula: (inputValue: string, fromUnit: Unit, toUnit: Unit, categoryDetails: UnitCategory) => number | string;
 }
 
-const standardConversion = (value: number, fromFactor: number, toFactor: number) => (value * fromFactor) / toFactor;
+// Standard formula for most numeric conversions
+const standardConversion = (inputValue: string, fromUnit: Unit, toUnit: Unit): number | string => {
+  const numericValue = parseFloat(inputValue);
+  if (isNaN(numericValue) || !isFinite(numericValue)) return "Invalid input";
+  if (toUnit.baseFactor === 0 && fromUnit.baseFactor !== 0 && numericValue !==0) { // Avoid division by zero if toFactor is 0 but not fromFactor
+      if (fromUnit.baseFactor === 0 && numericValue === 0) return 0; // 0 of anything is 0 of something else
+      return "Cannot divide by zero in conversion";
+  }
+  if (toUnit.baseFactor === 0 && fromUnit.baseFactor === 0) return numericValue; // e.g. 0m to 0km
+
+  return (numericValue * fromUnit.baseFactor) / toUnit.baseFactor;
+};
+
+// Temperature conversion formula
+const temperatureConversion = (inputValue: string, fromUnit: Unit, toUnit: Unit): number | string => {
+  const value = parseFloat(inputValue);
+  if (isNaN(value) || !isFinite(value)) return "Invalid input";
+
+  if (fromUnit.id === toUnit.id) return value;
+
+  let celsiusValue: number;
+  switch (fromUnit.id) {
+    case 'celsius':
+      celsiusValue = value;
+      break;
+    case 'fahrenheit':
+      celsiusValue = (value - 32) * 5 / 9;
+      break;
+    case 'kelvin':
+      celsiusValue = value - 273.15;
+      break;
+    default:
+      return "Unknown temperature unit";
+  }
+
+  switch (toUnit.id) {
+    case 'celsius':
+      return celsiusValue;
+    case 'fahrenheit':
+      return (celsiusValue * 9 / 5) + 32;
+    case 'kelvin':
+      return celsiusValue + 273.15;
+    default:
+      return "Unknown temperature unit";
+  }
+};
+
+// Timezone conversion formula
+const timezoneConversion = (inputValue: string, fromUnit: Unit, toUnit: Unit): string => {
+  if (!/^\d{2}:\d{2}$/.test(inputValue)) return "Invalid time format (HH:MM)";
+
+  const [hours, minutes] = inputValue.split(':').map(Number);
+  if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return "Invalid time value";
+  }
+
+  const fromOffset = fromUnit.baseFactor; // UTC offset in hours
+  const toOffset = toUnit.baseFactor;
+
+  // Calculate input time in UTC hours
+  // Example: Input 10:00 EST (fromOffset -5). UTC hours = 10 - (-5) = 15.
+  let utcHours = hours - fromOffset;
+
+  // Convert this UTC time to the target timezone's local hours
+  // Example: 15 UTC to PST (toOffset -8). Target hours = 15 + (-8) = 7.
+  let targetLocalHours = utcHours + toOffset;
+
+  // Normalize targetLocalHours to be within 0-23, handling day rollovers
+  targetLocalHours = (targetLocalHours % 24 + 24) % 24;
+
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${pad(targetLocalHours)}:${pad(minutes)}`;
+};
+
 
 export const unitCategories: UnitCategory[] = [
   {
@@ -41,7 +117,7 @@ export const unitCategories: UnitCategory[] = [
   {
     id: 'area',
     name: 'Area',
-    icon: Maximize, // Using Maximize as a stand-in for area/square
+    icon: Maximize,
     baseUnit: 'sq_meter',
     units: [
       { id: 'sq_meter', name: 'Square Meter', symbol: 'm²', baseFactor: 1 },
@@ -67,7 +143,7 @@ export const unitCategories: UnitCategory[] = [
     conversionFormula: standardConversion,
   },
   {
-    id: 'mass', // Changed from weight to mass for scientific correctness
+    id: 'mass',
     name: 'Mass',
     icon: Scale,
     baseUnit: 'kilogram',
@@ -85,30 +161,17 @@ export const unitCategories: UnitCategory[] = [
     id: 'temperature',
     name: 'Temperature',
     icon: Thermometer,
-    baseUnit: 'celsius', // Base unit for internal consistency, though direct formulas are used.
+    baseUnit: 'celsius',
     units: [
-      { id: 'celsius', name: 'Celsius', symbol: '°C', baseFactor: 1 }, // baseFactor not used in standard way
-      { id: 'fahrenheit', name: 'Fahrenheit', symbol: '°F', baseFactor: 1 },
-      { id: 'kelvin', name: 'Kelvin', symbol: 'K', baseFactor: 1 },
+      { id: 'celsius', name: 'Celsius', symbol: '°C', baseFactor: 0 }, // baseFactor not directly used by its formula in the standard way
+      { id: 'fahrenheit', name: 'Fahrenheit', symbol: '°F', baseFactor: 0 },
+      { id: 'kelvin', name: 'Kelvin', symbol: 'K', baseFactor: 0 },
     ],
-    conversionFormula: (value, _fromFactor, _toFactor, fromUnitId, toUnitId) => {
-      if (fromUnitId === toUnitId) return value;
-      // Convert to Celsius first, then to target
-      let celsiusValue: number;
-      if (fromUnitId === 'celsius') celsiusValue = value;
-      else if (fromUnitId === 'fahrenheit') celsiusValue = (value - 32) * 5/9;
-      else if (fromUnitId === 'kelvin') celsiusValue = value - 273.15;
-      else return NaN; // Unknown fromUnit
-
-      if (toUnitId === 'celsius') return celsiusValue;
-      if (toUnitId === 'fahrenheit') return (celsiusValue * 9/5) + 32;
-      if (toUnitId === 'kelvin') return celsiusValue + 273.15;
-      return NaN; // Unknown toUnit
-    },
+    conversionFormula: temperatureConversion,
   },
   {
     id: 'time',
-    name: 'Time',
+    name: 'Time (Duration)', // Renamed for clarity vs Time Zone
     icon: Clock,
     baseUnit: 'second',
     units: [
@@ -117,32 +180,54 @@ export const unitCategories: UnitCategory[] = [
       { id: 'hour', name: 'Hour', symbol: 'hr', baseFactor: 3600 },
       { id: 'day', name: 'Day', symbol: 'd', baseFactor: 86400 },
       { id: 'week', name: 'Week', symbol: 'wk', baseFactor: 604800 },
-      { id: 'month', name: 'Month (30d)', symbol: 'mo', baseFactor: 2592000 }, // Approximation
-      { id: 'year', name: 'Year (365d)', symbol: 'yr', baseFactor: 31536000 }, // Approximation
+      { id: 'month', name: 'Month (30d)', symbol: 'mo', baseFactor: 2592000 },
+      { id: 'year', name: 'Year (365d)', symbol: 'yr', baseFactor: 31536000 },
     ],
     conversionFormula: standardConversion,
   },
   {
-    id: 'currency',
+    id: 'timezone',
+    name: 'Time Zone',
+    icon: Globe,
+    baseUnit: 'utc', // Conceptually, as offsets are relative to UTC
+    units: [
+      { id: 'utc', name: 'Coordinated Universal Time', symbol: 'UTC', baseFactor: 0 },
+      { id: 'gmt', name: 'Greenwich Mean Time', symbol: 'GMT', baseFactor: 0 },
+      { id: 'est', name: 'Eastern Standard Time (US)', symbol: 'EST', baseFactor: -5 },
+      { id: 'edt', name: 'Eastern Daylight Time (US)', symbol: 'EDT', baseFactor: -4 },
+      { id: 'cst', name: 'Central Standard Time (US)', symbol: 'CST', baseFactor: -6 },
+      { id: 'cdt', name: 'Central Daylight Time (US)', symbol: 'CDT', baseFactor: -5 },
+      { id: 'mst', name: 'Mountain Standard Time (US)', symbol: 'MST', baseFactor: -7 },
+      { id: 'mdt', name: 'Mountain Daylight Time (US)', symbol: 'MDT', baseFactor: -6 },
+      { id: 'pst', name: 'Pacific Standard Time (US)', symbol: 'PST', baseFactor: -8 },
+      { id: 'pdt', name: 'Pacific Daylight Time (US)', symbol: 'PDT', baseFactor: -7 },
+      { id: 'cet', name: 'Central European Time', symbol: 'CET', baseFactor: 1 },
+      { id: 'cest', name: 'Central European Summer Time', symbol: 'CEST', baseFactor: 2 },
+      { id: 'jst', name: 'Japan Standard Time', symbol: 'JST', baseFactor: 9 },
+      { id: 'aest', name: 'Australian Eastern Standard Time', symbol: 'AEST', baseFactor: 10 },
+      { id: 'aedt', name: 'Australian Eastern Daylight Time', symbol: 'AEDT', baseFactor: 11 },
+    ],
+    conversionFormula: timezoneConversion,
+  },
+  {
+    id: 'currency', // Placeholder, requires API for real rates
     name: 'Currency',
     icon: DollarSign,
-    baseUnit: 'usd', // Example base, actual rates would be dynamic
+    baseUnit: 'usd',
     units: [
-      // Placeholder: Currency requires real-time API for accurate rates.
-      // These are for UI demonstration only.
       { id: 'usd', name: 'US Dollar', symbol: 'USD', baseFactor: 1 },
-      { id: 'eur', name: 'Euro', symbol: 'EUR', baseFactor: 0.92 }, // Example static rate
-      { id: 'gbp', name: 'British Pound', symbol: 'GBP', baseFactor: 0.79 }, // Example static rate
-      { id: 'jpy', name: 'Japanese Yen', symbol: 'JPY', baseFactor: 150.0 }, // Example static rate
+      { id: 'eur', name: 'Euro', symbol: 'EUR', baseFactor: 0.92 },
+      { id: 'gbp', name: 'British Pound', symbol: 'GBP', baseFactor: 0.79 },
+      { id: 'jpy', name: 'Japanese Yen', symbol: 'JPY', baseFactor: 150.0 },
     ],
-    conversionFormula: standardConversion, // This will use the static baseFactors above.
+    conversionFormula: standardConversion,
   },
 ];
 
 export const findCategory = (categoryId: string) => unitCategories.find(c => c.id === categoryId);
 export const findUnit = (category: UnitCategory, unitId: string) => category.units.find(u => u.id === unitId);
 
-export function convertUnits(value: number, fromUnitId: string, toUnitId: string, categoryId: string): number | string {
+export function convertUnits(inputValue: string, fromUnitId: string, toUnitId: string, categoryId: string): number | string {
   const category = findCategory(categoryId);
   if (!category) return "Invalid category";
 
@@ -150,11 +235,25 @@ export function convertUnits(value: number, fromUnitId: string, toUnitId: string
   const toUnit = findUnit(category, toUnitId);
 
   if (!fromUnit || !toUnit) return "Invalid unit";
-  if (isNaN(value) || !isFinite(value)) return "Invalid input value";
+  
+  // For all categories except timezone, basic validation for numeric input string can be done here.
+  // Timezone has its own HH:MM format check within its formula.
+  if (categoryId !== 'timezone') {
+      const numericValue = parseFloat(inputValue);
+      if (isNaN(numericValue) && inputValue.trim() !== "") return "Invalid input value: not a number";
+      if (!isFinite(numericValue) && inputValue.trim() !== "") return "Invalid input value: not finite";
+  }
+
 
   if (category.conversionFormula) {
-    return category.conversionFormula(value, fromUnit.baseFactor, toUnit.baseFactor, fromUnit.id, toUnit.id);
+    return category.conversionFormula(inputValue, fromUnit, toUnit, category);
   }
-  // Fallback for categories without a custom formula (should not happen if defined properly)
-  return (value * fromUnit.baseFactor) / toUnit.baseFactor;
+  
+  // Fallback, though all categories should have a formula.
+  // This fallback implicitly uses standardConversion logic.
+  const numericValue = parseFloat(inputValue);
+  if (isNaN(numericValue)) return "Invalid input value for fallback";
+  return (numericValue * fromUnit.baseFactor) / toUnit.baseFactor;
 }
+
+  
