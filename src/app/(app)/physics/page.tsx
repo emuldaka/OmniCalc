@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Atom, BookOpen, SigmaIcon, Binary, SlidersHorizontal, HelpCircle, Zap, Waves, Scaling } from 'lucide-react';
+import { Atom, BookOpen, SigmaIcon, Binary, SlidersHorizontal, Zap, Waves, Scaling } from 'lucide-react'; // Removed HelpCircle from here
 import { PhysicalConstantsDisplay } from '@/components/physics/physical-constants-display';
 import { CommonFormulasSummary } from '@/components/physics/common-formulas-summary';
 import { ParticlePhysicsDataDisplay } from '@/components/physics/particle-physics-data-display';
@@ -77,7 +77,7 @@ export default function PhysicsPage() {
             Electromagnetism Calculator
           </Button>
           <Button onClick={() => setActiveDialog('whatGoesUp')} variant="outline" size="lg" className="h-auto py-4 text-base">
-            <HelpCircle className="mr-2 h-5 w-5" /> What Goes Up...
+            What Goes Up...
           </Button>
         </CardContent>
       </Card>
@@ -117,7 +117,7 @@ export default function PhysicsPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center">
-              <HelpCircle className="mr-2 h-5 w-5 text-primary" /> A Universal Truth
+               A Universal Truth {/* Removed HelpCircle icon from here */}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-lg py-4 text-center text-foreground">
               Must Come Down!
@@ -131,3 +131,4 @@ export default function PhysicsPage() {
     </div>
   );
 }
+
