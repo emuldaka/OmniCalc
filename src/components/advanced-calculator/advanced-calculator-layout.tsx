@@ -28,7 +28,7 @@ export function AdvancedCalculatorLayout({ engineState, engineDispatch, onStoreR
 
   return (
     <>
-      <Card className="w-full max-w-3xl shadow-2xl flex flex-col">
+      <Card className="w-full shadow-2xl flex flex-col"> {/* Removed max-w-3xl */}
         <CardContent className="flex-grow flex flex-col p-4">
           <AdvancedCalculatorDisplay
             displayValue={engineState.displayValue}
