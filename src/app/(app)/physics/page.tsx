@@ -40,7 +40,7 @@ export default function PhysicsPage() {
   const [activeDialog, setActiveDialog] = useState<ActivePhysicsDialog>(null);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 w-full"> {/* Added w-full here */}
       <Card className="shadow-2xl">
         <CardHeader>
           <CardTitle className="text-4xl font-bold text-primary flex items-center">
