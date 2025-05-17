@@ -40,7 +40,7 @@ const TargetProductSchema = z.object({
 });
 export type TargetProduct = z.infer<typeof TargetProductSchema>;
 
-export const StoichiometryInputSchema = z.object({
+const StoichiometryInputSchema = z.object({
   unbalancedEquation: z.string().describe('The chemical equation, can be unbalanced (e.g., "C3H8 + O2 -> CO2 + H2O").'),
   reactants: z.array(ReactantSchema).min(1).describe('An array of reactants with their amounts and units.'),
   targetProducts: z.array(TargetProductSchema).optional().describe('An array of products to calculate theoretical yields for, with optional gas conditions.'),
@@ -153,3 +153,4 @@ const solveStoichiometryProblemFlow = ai.defineFlow(
     return output;
   }
 );
+
