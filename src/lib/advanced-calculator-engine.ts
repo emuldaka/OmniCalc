@@ -10,6 +10,7 @@ export interface AdvancedCalculatorState {
   openParentheses: number;
   error: string | null;
   overwrite: boolean;
+  history: Array<{ id: string; expression: string; result: string }>;
 }
 
 export const initialState: AdvancedCalculatorState = {
@@ -21,6 +22,7 @@ export const initialState: AdvancedCalculatorState = {
   openParentheses: 0,
   error: null,
   overwrite: true,
+  history: [],
 };
 
 export type AdvancedCalculatorAction =
@@ -56,11 +58,9 @@ const prepareExpressionForEval = (expr: string, isRadians: boolean): string => {
   prepared = prepared.replace(/×/g, "*");
   prepared = prepared.replace(/÷/g, "/");
   prepared = prepared.replace(/π/g, "Math.PI");
-  prepared = prepared.replace(/(?<![a-zA-Z0-9_])e(?![a-zA-Z0-9_])/g, "Math.E"); // Whole word 'e'
+  prepared = prepared.replace(/(?<![a-zA-Z0-9_])e(?![a-zA-Z0-9_])/g, "Math.E");
   prepared = prepared.replace(/\^/g, "**");
-  // `mod` was removed from buttons, so no need to replace it here unless direct expression input is planned later.
-  // prepared = prepared.replace(/mod/g, "%"); 
-
+  
   prepared = prepared.replace(/√\(([^)]+)\)/g, "Math.sqrt($1)");
   prepared = prepared.replace(/log\(([^)]+)\)/g, "Math.log10($1)");
   prepared = prepared.replace(/ln\(([^)]+)\)/g, "Math.log($1)");
@@ -95,7 +95,8 @@ export function advancedCalculatorReducer(state: AdvancedCalculatorState, action
   let newCurrentInput = state.currentInput;
   let newOverwrite = state.overwrite;
   let newDisplayValue = state.displayValue;
-  const operators = ["+", "-", "×", "÷", "^", "%"]; // Keep % here for potential future use in parsing logic
+  let newHistory = state.history;
+  const operators = ["+", "-", "×", "÷", "^", "%"];
 
   switch (action.type) {
     case "INPUT_DIGIT":
@@ -174,7 +175,7 @@ export function advancedCalculatorReducer(state: AdvancedCalculatorState, action
       newCurrentInput = "0";
       newOverwrite = true; 
       newDisplayValue = "0";
-      return { ...state, expression: newExpression, currentInput: "0", displayValue: "0", openParentheses: state.openParentheses +1, overwrite: true, error: null, secondFunctionActive: false };
+      return { ...state, expression: newExpression, currentInput: "0", displayValue: "0", openParentheses: state.openParentheses +1, overwrite: true, error: null, secondFunctionActive: false, history: newHistory };
 
 
     case "APPLY_POSTFIX_UNARY": {
@@ -185,7 +186,7 @@ export function advancedCalculatorReducer(state: AdvancedCalculatorState, action
       let exprToUpdate = state.expression;
       
       let numToOperate = parseFloat(numToOperateStr);
-      if (isNaN(numToOperate) && action.payload !== "negate") return {...state, error: "Invalid input", displayValue: "Error"};
+      if (isNaN(numToOperate) && action.payload !== "negate") return {...state, error: "Invalid input", displayValue: "Error", history: newHistory};
 
       let result: number;
       let resultStr: string;
@@ -193,12 +194,7 @@ export function advancedCalculatorReducer(state: AdvancedCalculatorState, action
       try {
         switch (action.payload) {
           case "negate":
-            if (numToOperateStr === "0") { resultStr = "0"; break; } // Toggling 0 is still 0
-            // Handle toggling sign for a number that is already negative and part of an expression
-            if (newExpression.endsWith(numToOperateStr) && numToOperate < 0) {
-                // If expression is "5*-2" and currentInput is "-2", toggling should make it "5*2"
-                 // This needs careful handling of expression updates.
-            }
+            if (numToOperateStr === "0") { resultStr = "0"; break; } 
             result = numToOperate * -1;
             resultStr = parseFloat(result.toPrecision(12)).toString();
             break;
@@ -222,32 +218,25 @@ export function advancedCalculatorReducer(state: AdvancedCalculatorState, action
           default: return state;
         }
       } catch (e: any) {
-        return {...state, error: e.message || "Calculation Error", displayValue: "Error" };
+        return {...state, error: e.message || "Calculation Error", displayValue: "Error", history: newHistory };
       }
 
-      if (resultStr && !Number.isFinite(parseFloat(resultStr))) return {...state, error: "Result too large", displayValue: "Error"};
+      if (resultStr && !Number.isFinite(parseFloat(resultStr))) return {...state, error: "Result too large", displayValue: "Error", history: newHistory};
       
       if (state.expression.endsWith(state.currentInput) && !state.overwrite) {
          newExpression = exprToUpdate.slice(0, exprToUpdate.length - state.currentInput.length) + resultStr;
       } else if (state.overwrite && state.expression.endsWith("=")) { 
          newExpression = resultStr;
       } else if (action.payload === "negate" && state.currentInput === "0") {
-          // If currentInput is "0" (placeholder after an operator) and negate is pressed
-          // e.g., expression "5+", currentInput "0". Press ± -> expression "5-", currentInput "0".
           const lastCharInExpr = newExpression.slice(-1);
           if (lastCharInExpr === "+") newExpression = newExpression.slice(0, -1) + "-";
           else if (lastCharInExpr === "-") newExpression = newExpression.slice(0, -1) + "+";
-          else if (newExpression === "" || newExpression.endsWith("(") || newExpression.endsWith("=")) newExpression += "-"; // Start with negative
-          // If after *, /, ^ and current input is "0", just append "-"
+          else if (newExpression === "" || newExpression.endsWith("(") || newExpression.endsWith("=")) newExpression += "-";
           else if (["×", "÷", "^"].includes(lastCharInExpr)) newExpression += "-";
-
-          resultStr = "0"; // Current input for typing remains 0
-      }
-       else { 
-         newExpression = resultStr; 
-        if (state.previousOperand && state.operation) { 
-            newExpression = `${state.previousOperand}${state.operation}${resultStr}`;
-        }
+          resultStr = "0"; 
+      } else { 
+        // This case might need more robust logic for expression building after a unary op if it's not the end of an expression
+        newExpression += resultStr; // Appends if the expression was something like "5+" and then 1/x was applied to a new number
       }
 
       return {
@@ -258,73 +247,66 @@ export function advancedCalculatorReducer(state: AdvancedCalculatorState, action
         overwrite: true,
         error: null,
         secondFunctionActive: false, 
+        history: newHistory
       };
     }
 
     case "INPUT_PARENTHESIS":
       if (action.payload === "(") {
         newExpression += "(";
-        return { ...state, expression: newExpression, openParentheses: state.openParentheses + 1, currentInput: "0", displayValue: "0", overwrite: true, error: null, secondFunctionActive: false };
+        return { ...state, expression: newExpression, openParentheses: state.openParentheses + 1, currentInput: "0", displayValue: "0", overwrite: true, error: null, secondFunctionActive: false, history: newHistory };
       } else { // ")"
         if (state.openParentheses > 0) {
           newExpression += ")";
-          return { ...state, expression: newExpression, openParentheses: state.openParentheses - 1, currentInput: state.currentInput, displayValue: state.currentInput, overwrite: true, error: null, secondFunctionActive: false };
+          return { ...state, expression: newExpression, openParentheses: state.openParentheses - 1, currentInput: state.currentInput, displayValue: state.currentInput, overwrite: true, error: null, secondFunctionActive: false, history: newHistory };
         }
       }
       break;
 
     case "EVALUATE":
       if (state.expression.trim() === "" || state.openParentheses !== 0) {
-        return { ...state, error: state.openParentheses !== 0 ? "Unclosed parentheses" : "Invalid Expression", displayValue: "Error" };
+        return { ...state, error: state.openParentheses !== 0 ? "Unclosed parentheses" : "Invalid Expression", displayValue: "Error", history: newHistory };
       }
       try {
         let exprToEval = state.expression;
-        // Ensure the last character is not an operator if it is, it might need to be handled or removed
-        const lastCharInExpr = exprToEval.trim().slice(-1);
-        if (operators.includes(lastCharInExpr)) {
-          // Option 1: Error out
-          // return { ...state, error: "Expression ends with operator", displayValue: "Error" };
-          // Option 2: Try to remove it (this might be too aggressive or lead to unexpected results)
-          // exprToEval = exprToEval.trim().slice(0, -1); 
-        }
-
-
         const finalExpressionToEval = prepareExpressionForEval(exprToEval, state.isRadians);
         const result = new Function('return ' + finalExpressionToEval)();
         
         if (typeof result === 'number' && !Number.isNaN(result) && Number.isFinite(result)) {
           const resultStr = parseFloat(result.toPrecision(12)).toString();
+          const historyEntry = { id: Date.now().toString(), expression: state.expression, result: resultStr };
+          const updatedHistory = [historyEntry, ...state.history].slice(0, 50); // Add to history and limit size
+
           return {
-            ...initialState,
+            ...initialState, // Resets most state
             currentInput: resultStr,
             displayValue: resultStr,
             expression: state.expression + "=", 
-            isRadians: state.isRadians,
-            secondFunctionActive: false,
+            isRadians: state.isRadians, // Persist Rad/Deg mode
+            history: updatedHistory, // Persist history
             overwrite: true,
           };
         } else {
-          return { ...state, error: "Calculation Error", displayValue: "Error" };
+          return { ...state, error: "Calculation Error", displayValue: "Error", history: newHistory };
         }
       } catch (e) {
-        // console.error("Evaluation error:", e, "Original expr:", state.expression, "Prepared expr:", prepareExpressionForEval(state.expression, state.isRadians));
-        return { ...state, error: "Syntax Error", displayValue: "Error" };
+        return { ...state, error: "Syntax Error", displayValue: "Error", history: newHistory };
       }
 
     case "TOGGLE_SECOND_FUNCTION":
-      return { ...state, secondFunctionActive: !state.secondFunctionActive };
+      return { ...state, secondFunctionActive: !state.secondFunctionActive, history: newHistory };
 
     case "TOGGLE_ANGLE_MODE":
-      return { ...state, isRadians: !state.isRadians, secondFunctionActive: false };
+      return { ...state, isRadians: !state.isRadians, secondFunctionActive: false, history: newHistory };
 
     case "CLEAR_ENTRY": 
       if (state.currentInput !== "0" && !state.overwrite) { 
         newExpression = state.expression.slice(0, state.expression.length - state.currentInput.length);
       } 
-      return { ...state, currentInput: "0", displayValue: "0", error: null, overwrite: true, secondFunctionActive: false };
+      return { ...state, currentInput: "0", displayValue: "0", expression: newExpression, error: null, overwrite: true, secondFunctionActive: false, history: newHistory };
       
     case "CLEAR_ALL": 
-      return { ...initialState, isRadians: state.isRadians };
+      return { ...initialState, isRadians: state.isRadians, history: [] }; // Clear history on CLEAR_ALL
 
     case "BACKSPACE":
       if (newOverwrite || newCurrentInput === "0" || newCurrentInput === "Error") break; 
@@ -351,7 +333,7 @@ export function advancedCalculatorReducer(state: AdvancedCalculatorState, action
       return state;
   }
   
-  return { ...state, expression: newExpression, currentInput: newCurrentInput, displayValue: newDisplayValue, overwrite: newOverwrite, error: null };
+  return { ...state, expression: newExpression, currentInput: newCurrentInput, displayValue: newDisplayValue, overwrite: newOverwrite, error: null, history: newHistory };
 }
 
 
@@ -361,7 +343,6 @@ export const scientificCalculatorButtons: Array<{
   secondLabel?: string;
   secondAction?: AdvancedCalculatorAction;
   className?: string;
-  colSpan?: number; 
 }> = [
   // Row 1
   { label: "2nd", action: { type: "TOGGLE_SECOND_FUNCTION" }, className: "bg-primary hover:bg-primary/80 text-primary-foreground" },
@@ -400,10 +381,11 @@ export const scientificCalculatorButtons: Array<{
   { label: "e", action: { type: "INPUT_CONSTANT", payload: "e" } },
   { label: "C", action: { type: "CLEAR_ALL" }, className: "bg-destructive hover:bg-destructive/80 text-destructive-foreground" },
   { label: "CE", action: { type: "CLEAR_ENTRY" }, className: "bg-destructive hover:bg-destructive/80 text-destructive-foreground" },
-  { label: "⌫", action: { type: "BACKSPACE" }, className: "bg-red-500 hover:bg-red-600 text-primary-foreground" }, // text-white changed to text-primary-foreground
+  { label: "⌫", action: { type: "BACKSPACE" }, className: "bg-red-500 hover:bg-red-600 text-primary-foreground" },
   { label: "=", action: { type: "EVALUATE" }, className: "bg-primary hover:bg-primary/90 text-primary-foreground" },
   { label: "0", action: { type: "INPUT_DIGIT", payload: "0" } },
   { label: ".", action: { type: "INPUT_DECIMAL" }, className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
   { label: "±", action: { type: "APPLY_POSTFIX_UNARY", payload: "negate" }, className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
   { label: "+", action: { type: "INPUT_OPERATOR", payload: "+" }, className: "bg-accent hover:bg-accent/90 text-accent-foreground" },
 ];
+
