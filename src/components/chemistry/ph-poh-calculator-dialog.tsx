@@ -30,18 +30,57 @@ type InputType =
   | "weak_acid_conc_Ka"
   | "weak_base_conc_Kb";
 
+type TemperatureUnit = 'C' | 'K' | 'F';
+
+// Function to calculate pKw based on temperature in Kelvin
+// Formula from: N.S. Nageshwara Rao, J. Chem. Educ., 2001, 78(1), 95
+const getPKw = (tempInKelvin: number): number => {
+  if (tempInKelvin <= 0) return 14; // Default or error case
+  return (4470.99 / tempInKelvin) - 6.0875 + (0.01706 * tempInKelvin);
+};
+
+const convertToKelvin = (value: number, unit: TemperatureUnit): number => {
+  switch (unit) {
+    case 'C':
+      return value + 273.15;
+    case 'F':
+      return (value - 32) * 5/9 + 273.15;
+    case 'K':
+      return value;
+    default:
+      return 298.15; // Default to 25°C if unit is unknown
+  }
+};
+
+
 export function PhPohCalculatorDialog({ isOpen, onClose }: PhPohCalculatorDialogProps) {
   const [inputType, setInputType] = useState<InputType>("pH");
   const [inputValue, setInputValue] = useState("");
   const [initialConcentration, setInitialConcentration] = useState("");
   const [dissociationConstant, setDissociationConstant] = useState(""); // For Ka or Kb
+  
+  const [temperatureValue, setTemperatureValue] = useState("25");
+  const [temperatureUnit, setTemperatureUnit] = useState<TemperatureUnit>("C");
 
-  const [results, setResults] = useState<{ pH?: string; pOH?: string; H?: string; OH?: string; error?: string } | null>(null);
+  const [results, setResults] = useState<{ pH?: string; pOH?: string; H?: string; OH?: string; pKwUsed?: string; error?: string } | null>(null);
 
   const calculateAll = () => {
     const val = parseFloat(inputValue);
-    const C0 = parseFloat(initialConcentration); // Initial Concentration
-    const K_diss = parseFloat(dissociationConstant); // Ka or Kb
+    const C0 = parseFloat(initialConcentration); 
+    const K_diss = parseFloat(dissociationConstant); 
+    const tempNum = parseFloat(temperatureValue);
+
+    if (isNaN(tempNum)) {
+      setResults({ error: "Invalid temperature value." });
+      return;
+    }
+
+    const tempK = convertToKelvin(tempNum, temperatureUnit);
+    if (tempK <= 0) {
+        setResults({error: "Temperature must be above absolute zero."});
+        return;
+    }
+    const pKw = getPKw(tempK);
 
     let pH: number | undefined, pOH: number | undefined, H_conc: number | undefined, OH_conc: number | undefined;
     let errorMsg: string | undefined;
@@ -50,62 +89,55 @@ export function PhPohCalculatorDialog({ isOpen, onClose }: PhPohCalculatorDialog
       switch (inputType) {
         case "pH":
           if (isNaN(val)) { errorMsg = "Invalid input value for pH."; break; }
-          if (val < 0 || val > 14) errorMsg = "pH must be between 0 and 14.";
+          // pH theoretical limits can exceed 0-pKw range for superacids/bases
           pH = val;
-          pOH = 14 - pH;
+          pOH = pKw - pH;
           H_conc = Math.pow(10, -pH);
           OH_conc = Math.pow(10, -pOH);
           break;
         case "pOH":
           if (isNaN(val)) { errorMsg = "Invalid input value for pOH."; break; }
-          if (val < 0 || val > 14) errorMsg = "pOH must be between 0 and 14.";
           pOH = val;
-          pH = 14 - pOH;
+          pH = pKw - pOH;
           H_conc = Math.pow(10, -pH);
           OH_conc = Math.pow(10, -pOH);
           break;
         case "H_concentration":
           if (isNaN(val)) { errorMsg = "Invalid input value for [H⁺]."; break; }
-          if (val <= 0) errorMsg = "[H⁺] concentration must be positive.";
+          if (val <= 0) { errorMsg = "[H⁺] concentration must be positive."; break;}
           H_conc = val;
           pH = -Math.log10(H_conc);
-          if (pH < -1 || pH > 15) errorMsg = errorMsg || "Calculated pH significantly out of typical range (0-14)."; // Wider range for superacids/bases
-          pOH = 14 - pH;
+          pOH = pKw - pH;
           OH_conc = Math.pow(10, -pOH);
           break;
         case "OH_concentration":
           if (isNaN(val)) { errorMsg = "Invalid input value for [OH⁻]."; break; }
-          if (val <= 0) errorMsg = "[OH⁻] concentration must be positive.";
+          if (val <= 0) { errorMsg = "[OH⁻] concentration must be positive."; break;}
           OH_conc = val;
           pOH = -Math.log10(OH_conc);
-          if (pOH < -1 || pOH > 15) errorMsg = errorMsg || "Calculated pOH significantly out of typical range (0-14).";
-          pH = 14 - pOH;
+          pH = pKw - pOH;
           H_conc = Math.pow(10, -pH);
           break;
         case "weak_acid_conc_Ka":
           if (isNaN(C0) || isNaN(K_diss)) { errorMsg = "Invalid input for C₀ or Ka."; break; }
           if (C0 <= 0 || K_diss <= 0) { errorMsg = "Initial concentration and Ka must be positive."; break; }
-          // Solve x² + Ka*x - Ka*C₀ = 0 for x = [H⁺]
-          // x = (-Ka + sqrt(Ka² + 4*Ka*C₀)) / 2
           const discriminant_Ka = Math.pow(K_diss, 2) + 4 * K_diss * C0;
           if (discriminant_Ka < 0) { errorMsg = "Cannot calculate [H⁺] (negative discriminant)."; break; }
           H_conc = (-K_diss + Math.sqrt(discriminant_Ka)) / 2;
-          if (H_conc <= 0) { errorMsg = "Calculated [H⁺] is not positive."; break; }
+          if (H_conc <= 0 || isNaN(H_conc)) { errorMsg = "Calculated [H⁺] is not positive or valid."; break; }
           pH = -Math.log10(H_conc);
-          pOH = 14 - pH;
+          pOH = pKw - pH;
           OH_conc = Math.pow(10, -pOH);
           break;
         case "weak_base_conc_Kb":
           if (isNaN(C0) || isNaN(K_diss)) { errorMsg = "Invalid input for C₀ or Kb."; break; }
           if (C0 <= 0 || K_diss <= 0) { errorMsg = "Initial concentration and Kb must be positive."; break; }
-          // Solve x² + Kb*x - Kb*C₀ = 0 for x = [OH⁻]
-          // x = (-Kb + sqrt(Kb² + 4*Kb*C₀)) / 2
           const discriminant_Kb = Math.pow(K_diss, 2) + 4 * K_diss * C0;
           if (discriminant_Kb < 0) { errorMsg = "Cannot calculate [OH⁻] (negative discriminant)."; break; }
           OH_conc = (-K_diss + Math.sqrt(discriminant_Kb)) / 2;
-          if (OH_conc <= 0) { errorMsg = "Calculated [OH⁻] is not positive."; break; }
+          if (OH_conc <= 0 || isNaN(OH_conc)) { errorMsg = "Calculated [OH⁻] is not positive or valid."; break; }
           pOH = -Math.log10(OH_conc);
-          pH = 14 - pOH;
+          pH = pKw - pOH;
           H_conc = Math.pow(10, -pH);
           break;
         default:
@@ -120,6 +152,7 @@ export function PhPohCalculatorDialog({ isOpen, onClose }: PhPohCalculatorDialog
           pOH: pOH?.toPrecision(3),
           H: H_conc?.toExponential(2),
           OH: OH_conc?.toExponential(2),
+          pKwUsed: pKw.toPrecision(4),
         });
       }
     } catch (e) {
@@ -131,15 +164,18 @@ export function PhPohCalculatorDialog({ isOpen, onClose }: PhPohCalculatorDialog
     setInputValue("");
     setInitialConcentration("");
     setDissociationConstant("");
+    setTemperatureValue("25");
+    setTemperatureUnit("C");
     setResults(null);
     setInputType("pH");
   }
   
   useEffect(() => {
-    // Clear all inputs when type changes
     setInputValue("");
     setInitialConcentration("");
     setDissociationConstant("");
+    setTemperatureValue("25"); // Reset temperature to default on type change
+    setTemperatureUnit("C");
     setResults(null);
   }, [inputType]);
 
@@ -151,12 +187,39 @@ export function PhPohCalculatorDialog({ isOpen, onClose }: PhPohCalculatorDialog
         <DialogHeader>
           <DialogTitle>pH / pOH Calculator</DialogTitle>
           <DialogDescription>
-            Calculate pH, pOH, [H⁺], and [OH⁻]. For weak acids/bases, provide C₀ and Ka/Kb. Assumes 25°C.
+            Calculate pH, pOH, [H⁺], and [OH⁻] based on the selected input type and temperature.
+            For weak acids/bases, provide C₀ and Ka/Kb.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+                <Label htmlFor="temperatureValue" className="text-primary font-medium">Temperature</Label>
+                <Input
+                    id="temperatureValue"
+                    type="number"
+                    value={temperatureValue}
+                    onChange={(e) => setTemperatureValue(e.target.value)}
+                    className="mt-1"
+                />
+            </div>
+            <div>
+                <Label htmlFor="temperatureUnit" className="text-primary font-medium">Unit</Label>
+                 <Select value={temperatureUnit} onValueChange={(v) => setTemperatureUnit(v as TemperatureUnit)}>
+                    <SelectTrigger id="temperatureUnit" className="mt-1">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="C">°C</SelectItem>
+                        <SelectItem value="K">K</SelectItem>
+                        <SelectItem value="F">°F</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+          </div>
+
           <div>
-            <Label htmlFor="inputType" className="text-primary font-medium">Input Type:</Label>
+            <Label htmlFor="inputType" className="text-primary font-medium">Calculate From:</Label>
             <Select value={inputType} onValueChange={(v) => setInputType(v as InputType)}>
               <SelectTrigger id="inputType" className="mt-1">
                 <SelectValue />
@@ -166,8 +229,8 @@ export function PhPohCalculatorDialog({ isOpen, onClose }: PhPohCalculatorDialog
                 <SelectItem value="pOH">pOH</SelectItem>
                 <SelectItem value="H_concentration">[H⁺] Concentration (M)</SelectItem>
                 <SelectItem value="OH_concentration">[OH⁻] Concentration (M)</SelectItem>
-                <SelectItem value="weak_acid_conc_Ka">Weak Acid (from C₀ & Ka)</SelectItem>
-                <SelectItem value="weak_base_conc_Kb">Weak Base (from C₀ & Kb)</SelectItem>
+                <SelectItem value="weak_acid_conc_Ka">Weak Acid (C₀ & Ka)</SelectItem>
+                <SelectItem value="weak_base_conc_Kb">Weak Base (C₀ & Kb)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -180,7 +243,7 @@ export function PhPohCalculatorDialog({ isOpen, onClose }: PhPohCalculatorDialog
                 type="number"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder={`Enter ${inputType.replace("_", " ")}`}
+                placeholder={`Enter ${inputType.replace(/_/g, " ")}`}
                 className="mt-1"
               />
             </div>
@@ -223,6 +286,7 @@ export function PhPohCalculatorDialog({ isOpen, onClose }: PhPohCalculatorDialog
               {results.pOH && <p><span className="font-semibold text-primary">pOH:</span> {results.pOH}</p>}
               {results.H && <p><span className="font-semibold text-primary">[H⁺]:</span> {results.H} M</p>}
               {results.OH && <p><span className="font-semibold text-primary">[OH⁻]:</span> {results.OH} M</p>}
+              {results.pKwUsed && <p className="text-xs text-muted-foreground text-center">(Calculations performed using pK<sub>w</sub> = {results.pKwUsed} at the specified temperature)</p>}
             </div>
           )}
         </div>
@@ -235,3 +299,4 @@ export function PhPohCalculatorDialog({ isOpen, onClose }: PhPohCalculatorDialog
     </Dialog>
   );
 }
+
