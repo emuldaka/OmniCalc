@@ -4,13 +4,14 @@
 import { Button } from "@/components/ui/button";
 import { scientificCalculatorButtons, AdvancedCalculatorState, AdvancedCalculatorAction } from "@/lib/advanced-calculator-engine";
 import { cn } from "@/lib/utils";
+import type { Dispatch } from 'react';
 
 interface AdvancedCalculatorKeypadProps {
-  onButtonClick: (action: AdvancedCalculatorAction) => void;
+  engineDispatch: Dispatch<AdvancedCalculatorAction>;
   currentState: AdvancedCalculatorState;
 }
 
-export function AdvancedCalculatorKeypad({ onButtonClick, currentState }: AdvancedCalculatorKeypadProps) {
+export function AdvancedCalculatorKeypad({ engineDispatch, currentState }: AdvancedCalculatorKeypadProps) {
   return (
     <div className="grid grid-cols-9 gap-1"> {/* Changed to 9 columns, reduced gap */}
       {scientificCalculatorButtons.map((btnDef, index) => {
@@ -27,15 +28,15 @@ export function AdvancedCalculatorKeypad({ onButtonClick, currentState }: Advanc
         return (
           <Button
             key={btnDef.label + (btnDef.secondLabel || "") + index} // Added index for better key uniqueness with reordering
-            variant={btnDef.className && (btnDef.className.includes("bg-primary") || btnDef.className.includes("bg-accent") || btnDef.className.includes("bg-destructive")) ? "default" : "secondary"}
+            variant={btnDef.className && (btnDef.className.includes("bg-primary") || btnDef.className.includes("bg-accent") || btnDef.className.includes("bg-destructive") || btnDef.className.includes("bg-blue-300") || btnDef.className.includes("bg-red-500") ) ? "default" : "secondary"}
             className={cn(
               "text-xs sm:text-sm h-11 w-full rounded-md shadow-sm focus:ring-2 focus:ring-ring focus:ring-offset-1 p-1", // Adjusted padding and height slightly
               "active:scale-95 transition-transform duration-75",
               btnDef.className,
               isActive && "bg-accent/70 text-accent-foreground ring-2 ring-accent",
-              btnDef.colSpan && `col-span-${btnDef.colSpan}`, // Added colSpan support
+               btnDef.colSpan && `col-span-${btnDef.colSpan}`, // This was in a previous version, may not be needed for 9x4 fixed
             )}
-            onClick={() => onButtonClick(effectiveAction)}
+            onClick={() => engineDispatch(effectiveAction)}
             aria-label={effectiveLabel}
             title={effectiveLabel === "x^y" ? "Exponent (Power)" : effectiveLabel === "√" ? "Square Root" : effectiveLabel}
           >
