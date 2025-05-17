@@ -85,7 +85,7 @@ export default function PhysicsPage() {
       
       <Separator className="my-10" />
 
-      <Accordion type="multiple" collapsible className="w-full space-y-6">
+      <Accordion type="multiple" className="w-full space-y-6">
         <AccordionItem value="constants">
           <AccordionTrigger className="text-2xl font-semibold text-primary hover:text-accent hover:no-underline p-4 rounded-lg data-[state=open]:bg-muted/50">
             <div className="flex items-center">
@@ -162,3 +162,4 @@ export default function PhysicsPage() {
     </div>
   );
 }
+
