@@ -1,14 +1,11 @@
-
 // src/app/(app)/advanced-calculator/page.tsx
 "use client";
 
-import { useState, useCallback } from "react";
-import { AdvancedCalculatorLayout } from "@/components/advanced-calculator/advanced-calculator-layout";
-import { StoredValuesContainer } from "@/components/advanced-calculator/stored-values-container";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { PlusCircle, ListChecks, BeakerIcon } from "lucide-react";
+import { useState, useReducer } from "react";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { BeakerIcon } from "lucide-react";
+import { advancedCalculatorReducer, initialState as initialEngineState, AdvancedCalculatorAction } from "@/lib/advanced-calculator-engine";
+import { AdvancedCalculatorInstance } from "@/components/advanced-calculator/advanced-calculator-instance"; // Import the new component
 
 export interface StoredValue {
   id: string;
@@ -17,92 +14,48 @@ export interface StoredValue {
 }
 
 export default function AdvancedCalculatorPage() {
-  const [storedValues, setStoredValues] = useState<StoredValue[]>([]);
-  const [directInputValue, setDirectInputValue] = useState<string>("");
+  // State for Calculator 1
+  const [engineState1, dispatch1] = useReducer(advancedCalculatorReducer, initialEngineState);
+  const [storedValues1, setStoredValues1] = useState<StoredValue[]>([]);
+  const [directInputValue1, setDirectInputValue1] = useState<string>("");
 
-  const handleStoreResultFromCalculator = useCallback((result: string) => {
-    const numericResult = parseFloat(result);
-    if (!isNaN(numericResult) && isFinite(numericResult)) {
-      setStoredValues((prev) => [
-        ...prev,
-        {
-          id: `calc-${Date.now()}`,
-          value: numericResult,
-          label: `Calc: ${numericResult.toFixed(2)}`,
-        },
-      ]);
-    }
-  }, []);
-
-  const handleAddDirectValue = useCallback(() => {
-    const numericValue = parseFloat(directInputValue);
-    if (!isNaN(numericValue) && isFinite(numericValue)) {
-      setStoredValues((prev) => [
-        ...prev,
-        {
-          id: `direct-${Date.now()}`,
-          value: numericValue,
-          label: `Direct: ${numericValue.toFixed(2)}`,
-        },
-      ]);
-      setDirectInputValue("");
-    }
-  }, [directInputValue]);
-
-  const handleDeleteValue = useCallback((id: string) => {
-    setStoredValues((prev) => prev.filter((val) => val.id !== id));
-  }, []);
+  // State for Calculator 2
+  const [engineState2, dispatch2] = useReducer(advancedCalculatorReducer, initialEngineState);
+  const [storedValues2, setStoredValues2] = useState<StoredValue[]>([]);
+  const [directInputValue2, setDirectInputValue2] = useState<string>("");
 
   return (
     <div className="flex flex-col h-full space-y-6">
       <Card className="shadow-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl text-primary flex items-center justify-center">
-            <BeakerIcon className="mr-3 h-8 w-8" /> Advanced Scientific Calculator
+            <BeakerIcon className="mr-3 h-8 w-8" /> Advanced Scientific Calculators
           </CardTitle>
           <CardDescription className="text-lg">
-            Perform complex calculations and manage numeric values.
+            Perform complex calculations and manage numeric values with two independent calculators.
           </CardDescription>
         </CardHeader>
       </Card>
 
-      <div className="flex flex-col space-y-4 items-center"> {/* Centering the single column content */}
-        <div className="w-full max-w-3xl"> {/* Max width for calculator layout */}
-            <AdvancedCalculatorLayout onStoreResult={handleStoreResultFromCalculator} />
-        </div>
-        <Card className="shadow-md w-full max-w-3xl"> {/* Max width for consistency */}
-          <CardHeader>
-            <CardTitle className="text-xl text-primary flex items-center">
-              <PlusCircle className="mr-2 h-5 w-5"/> Add Numeric Value to Storage
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex gap-2">
-            <Input
-              type="number"
-              value={directInputValue}
-              onChange={(e) => setDirectInputValue(e.target.value)}
-              placeholder="Enter a number"
-              className="flex-grow"
-            />
-            <Button onClick={handleAddDirectValue}>Add Value</Button>
-          </CardContent>
-        </Card>
-         <Card className="shadow-md w-full max-w-3xl"> {/* Max width for consistency */}
-          <CardHeader>
-            <CardTitle className="text-xl text-primary flex items-center">
-              <ListChecks className="mr-3 h-6 w-6" /> Stored Numeric Values
-            </CardTitle>
-            <CardDescription>
-              Your saved numeric values for reference.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-              <StoredValuesContainer
-                  values={storedValues}
-                  onDeleteValue={handleDeleteValue}
-              />
-          </CardContent>
-       </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6"> {/* Increased gap-y for better spacing between rows on mobile */}
+        <AdvancedCalculatorInstance
+          instanceNumber={1}
+          engineState={engineState1}
+          engineDispatch={dispatch1}
+          storedValues={storedValues1}
+          setStoredValues={setStoredValues1}
+          directInputValue={directInputValue1}
+          setDirectInputValue={setDirectInputValue1}
+        />
+        <AdvancedCalculatorInstance
+          instanceNumber={2}
+          engineState={engineState2}
+          engineDispatch={dispatch2}
+          storedValues={storedValues2}
+          setStoredValues={setStoredValues2}
+          directInputValue={directInputValue2}
+          setDirectInputValue={setDirectInputValue2}
+        />
       </div>
     </div>
   );

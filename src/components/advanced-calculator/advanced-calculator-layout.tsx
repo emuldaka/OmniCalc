@@ -1,35 +1,28 @@
-
 // src/components/advanced-calculator/advanced-calculator-layout.tsx
 "use client";
 
-import { useReducer, useState } from "react";
+import { useState } from "react";
+import type { Dispatch } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { AdvancedCalculatorDisplay } from "./advanced-calculator-display";
 import { AdvancedCalculatorKeypad } from "./advanced-calculator-keypad";
-import { HistoryModal } from "./history-modal"; // Import the new modal
-import {
-  advancedCalculatorReducer,
-  initialState as advancedInitialState,
-  AdvancedCalculatorAction,
-} from "@/lib/advanced-calculator-engine";
+import { HistoryModal } from "./history-modal";
+import { AdvancedCalculatorState, AdvancedCalculatorAction } from "@/lib/advanced-calculator-engine";
 import { Button } from "@/components/ui/button";
-import { Save, History as HistoryIcon } from "lucide-react"; // Added HistoryIcon
+import { Save, History as HistoryIcon } from "lucide-react";
 
 interface AdvancedCalculatorLayoutProps {
+  engineState: AdvancedCalculatorState;
+  engineDispatch: Dispatch<AdvancedCalculatorAction>;
   onStoreResult: (result: string) => void;
 }
 
-export function AdvancedCalculatorLayout({ onStoreResult }: AdvancedCalculatorLayoutProps) {
-  const [state, dispatch] = useReducer(advancedCalculatorReducer, advancedInitialState);
+export function AdvancedCalculatorLayout({ engineState, engineDispatch, onStoreResult }: AdvancedCalculatorLayoutProps) {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
-  const handleButtonClick = (action: AdvancedCalculatorAction) => {
-    dispatch(action);
-  };
-
   const handleAddToStorageClick = () => {
-    if (state.displayValue && state.displayValue !== "Error" && state.displayValue !== "0") {
-      onStoreResult(state.displayValue);
+    if (engineState.displayValue && engineState.displayValue !== "Error" && engineState.displayValue !== "0") {
+      onStoreResult(engineState.displayValue);
     }
   };
 
@@ -38,14 +31,14 @@ export function AdvancedCalculatorLayout({ onStoreResult }: AdvancedCalculatorLa
       <Card className="w-full max-w-3xl shadow-2xl flex flex-col">
         <CardContent className="flex-grow flex flex-col p-4">
           <AdvancedCalculatorDisplay
-            displayValue={state.displayValue}
-            expression={state.expression}
-            isRadians={state.isRadians}
-            secondFunctionActive={state.secondFunctionActive}
-            error={state.error}
+            displayValue={engineState.displayValue}
+            expression={engineState.expression}
+            isRadians={engineState.isRadians}
+            secondFunctionActive={engineState.secondFunctionActive}
+            error={engineState.error}
           />
           <div className="mt-4">
-            <AdvancedCalculatorKeypad onButtonClick={handleButtonClick} currentState={state} />
+            <AdvancedCalculatorKeypad engineDispatch={engineDispatch} currentState={engineState} />
           </div>
           <div className="grid grid-cols-2 gap-2 mt-4">
             <Button onClick={handleAddToStorageClick} className="w-full" variant="outline">
@@ -62,7 +55,7 @@ export function AdvancedCalculatorLayout({ onStoreResult }: AdvancedCalculatorLa
       <HistoryModal
         isOpen={isHistoryModalOpen}
         onClose={() => setIsHistoryModalOpen(false)}
-        history={state.history}
+        history={engineState.history}
       />
     </>
   );
