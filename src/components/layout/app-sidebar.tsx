@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calculator, ArrowRightLeft, Settings, Sigma, BeakerIcon, LineChart, FlaskConical } from "lucide-react"; // Added FlaskConical
+import { Calculator, ArrowRightLeft, Settings, Sigma, BeakerIcon, LineChart, FlaskConical, Atom } from "lucide-react"; // Added Atom
 import {
   Sidebar,
   SidebarHeader,
@@ -14,7 +14,7 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarTrigger,
-} from "@/components/ui/sidebar"; 
+} from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -22,7 +22,8 @@ const navItems = [
   { href: "/converter", label: "Converter", icon: ArrowRightLeft },
   { href: "/advanced-calculator", label: "Advanced Calc", icon: BeakerIcon },
   { href: "/graphing", label: "Graphing", icon: LineChart },
-  { href: "/chemistry", label: "Chemistry", icon: FlaskConical }, // New Chemistry item
+  { href: "/chemistry", label: "Chemistry", icon: FlaskConical },
+  { href: "/physics", label: "Physics", icon: Atom }, // New Physics item
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
