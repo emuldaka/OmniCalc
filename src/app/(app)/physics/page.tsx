@@ -40,13 +40,6 @@ export default function PhysicsPage() {
         </CardHeader>
       </Card>
 
-      <PhysicalConstantsDisplay />
-      <Separator className="my-10" />
-      <CommonFormulasSummary />
-      <Separator className="my-10" />
-      <ParticlePhysicsDataDisplay />
-      <Separator className="my-10" />
-
       <Card className="shadow-xl">
         <CardHeader>
           <CardTitle className="text-3xl text-primary flex items-center">
@@ -74,6 +67,14 @@ export default function PhysicsPage() {
           </Button>
         </CardContent>
       </Card>
+      
+      <Separator className="my-10" />
+      <PhysicalConstantsDisplay />
+      <Separator className="my-10" />
+      <CommonFormulasSummary />
+      <Separator className="my-10" />
+      <ParticlePhysicsDataDisplay />
+      
 
       {/* Dialogs */}
       <KinematicsCalculatorDialog
@@ -99,3 +100,4 @@ export default function PhysicsPage() {
     </div>
   );
 }
+
