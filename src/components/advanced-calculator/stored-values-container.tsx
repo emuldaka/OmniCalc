@@ -33,12 +33,11 @@ export function StoredValuesContainer({
           <Card key={item.id} className="p-3 shadow-sm bg-background hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                {/* Checkbox removed as values are no longer directly plotable */}
                 <div>
                   <span className="font-medium text-sm">
                     {item.label || `Value: ${item.value}`}
                   </span>
-                  <p className="text-xs text-muted-foreground">ID: {item.id}</p>
+                  {/* ID display removed from here */}
                 </div>
               </div>
               <Button
@@ -57,3 +56,4 @@ export function StoredValuesContainer({
     </ScrollArea>
   );
 }
+
