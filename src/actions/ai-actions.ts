@@ -1,7 +1,10 @@
+
 // src/actions/ai-actions.ts
 "use server";
 
 import { understandCalculationIntent } from "@/ai/flows/understand-calculation-intent";
+import { solveStoichiometryProblem as solveStoichiometryProblemFlow, type StoichiometryInput, type StoichiometryOutput } from "@/ai/flows/solve-stoichiometry-problem";
+
 
 interface AiProcessResult {
   calculation?: string;
@@ -57,5 +60,23 @@ export async function processAiInput(expression: string): Promise<AiProcessResul
       errorMessage = error.message;
     }
     return { error: errorMessage };
+  }
+}
+
+// Server action for the new stoichiometry flow
+export async function solveStoichiometryProblem(input: StoichiometryInput): Promise<StoichiometryOutput> {
+  try {
+    const result = await solveStoichiometryProblemFlow(input);
+    return result;
+  } catch (error) {
+    console.error("Stoichiometry flow error in action:", error);
+    let errorMessage = "An error occurred while solving the stoichiometry problem with AI.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    return { 
+      errorMessage: errorMessage,
+      calculationLog: ["Server action failed to invoke AI flow."]
+    };
   }
 }
