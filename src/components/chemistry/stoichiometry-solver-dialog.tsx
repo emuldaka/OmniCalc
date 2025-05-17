@@ -16,10 +16,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox"; // Corrected import
+import { ScrollArea } from "@/components/ui/scroll-area"; // Keep for nested scroll if needed (e.g. calculation log)
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { solveStoichiometryProblem, type StoichiometryInput, type StoichiometryOutput, type Reactant, type TargetProduct, type ActualYield } from "@/actions/ai-actions";
+import { solveStoichiometryProblem } from "@/actions/ai-actions";
+import type { StoichiometryInput, StoichiometryOutput, Reactant, TargetProduct, ActualYield } from "@/actions/ai-actions";
 import { Loader2, PlusCircle, Trash2, Wand2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -138,7 +139,6 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
     setIsProcessing(false);
   };
 
-  // useEffect to reset form when dialog is closed externally
   useEffect(() => {
     if (!isOpen) {
       resetForm();
@@ -149,7 +149,7 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if(!open) resetForm(); onClose();}}>
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-2xl">Advanced Stoichiometry Solver</DialogTitle>
           <DialogDescription>
             Enter equation, reactant amounts, and what to find. AI will attempt to balance, find limiting reactants, and calculate yields.
@@ -157,7 +157,7 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0">
+        <div className="flex-grow overflow-y-auto min-h-0">
           <div className="space-y-6 py-4 px-6">
             <div>
               <Label htmlFor="unbalanced-equation" className="text-lg font-medium text-primary">Chemical Equation</Label>
@@ -265,14 +265,14 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
                                     <Label htmlFor={`tp-formula-${index}`}>Product Formula</Label>
                                     <Input id={`tp-formula-${index}`} value={tp.formula} onChange={(e) => handleTargetProductChange(index, 'formula', e.target.value)} placeholder="e.g., CO2" />
                                 </div>
-                                <div>
-                                   <Label htmlFor={`tp-volume-${index}`} className="flex items-center mt-2 md:mt-0 pt-2"> {/* Added pt-2 for alignment */}
-                                        <Checkbox
-                                            id={`tp-volume-${index}`}
-                                            checked={tp.calculateVolume || false}
-                                            onCheckedChange={(checked) => handleTargetProductChange(index, 'calculateVolume', !!checked)}
-                                            className="mr-2 h-4 w-4 accent-primary"
-                                        />
+                                <div className="flex items-center pt-6"> {/* Adjusted for Checkbox alignment */}
+                                   <Checkbox
+                                        id={`tp-volume-${index}`}
+                                        checked={tp.calculateVolume || false}
+                                        onCheckedChange={(checked) => handleTargetProductChange(index, 'calculateVolume', !!checked)}
+                                        className="mr-2 h-4 w-4 accent-primary"
+                                    />
+                                    <Label htmlFor={`tp-volume-${index}`} className="font-normal"> {/* Removed text-primary for default text color */}
                                         Calculate Volume (if gas)
                                     </Label>
                                 </div>
@@ -422,9 +422,9 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
               </Card>
             )}
           </div>
-        </ScrollArea>
+        </div>
         
-        <DialogFooter className="sm:justify-between pt-4 border-t">
+        <DialogFooter className="sm:justify-between pt-4 border-t flex-shrink-0">
           <Button type="button" variant="outline" onClick={resetForm}>Reset Form</Button>
           <DialogClose asChild>
             <Button type="button" variant="secondary">Close</Button>
@@ -434,6 +434,3 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
     </Dialog>
   );
 }
-
-
-    
