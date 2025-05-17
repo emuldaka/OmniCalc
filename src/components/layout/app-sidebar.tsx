@@ -1,9 +1,10 @@
+
 // src/components/layout/app-sidebar.tsx
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calculator, ArrowRightLeft, Settings, Sigma, Bot, BeakerIcon } from "lucide-react"; // Added BeakerIcon
+import { Calculator, ArrowRightLeft, Settings, Sigma, BeakerIcon, LineChart } from "lucide-react"; // Added LineChart
 import {
   Sidebar,
   SidebarHeader,
@@ -19,7 +20,8 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { href: "/calculator", label: "Calculator", icon: Calculator },
   { href: "/converter", label: "Converter", icon: ArrowRightLeft },
-  { href: "/advanced-calculator", label: "Advanced Calc", icon: BeakerIcon }, // New item
+  { href: "/advanced-calculator", label: "Advanced Calc", icon: BeakerIcon },
+  { href: "/graphing", label: "Graphing", icon: LineChart }, // New Graphing item
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
