@@ -23,7 +23,7 @@ export interface EquationItem {
   id: string;
   equationString: string;
   plotted: boolean;
-  color: string; 
+  color: string;
 }
 
 export type GraphDataPoint = {
@@ -35,7 +35,7 @@ export interface FunctionPlotData {
     id: string;
     points: GraphDataPoint[];
     color: string;
-    name: string; 
+    name: string;
 }
 
 const lineColors = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
@@ -58,7 +58,13 @@ const evaluateEquationForX = (equationString: string, xValue: number): number | 
       //    letter or closing parenthesis followed by number: x2 -> x*2, )2 -> )*2
       .replace(/([a-zA-Z)])(\d(?:\.\d+)?)/g, '$1*$2')
       //    closing parenthesis or letter followed by opening parenthesis or letter: )( -> )*(, x( -> x*(, xy -> x*y
+      //    This rule for xy might be too aggressive if 'x' is the only variable and other letters are part of function names.
+      //    Let's make it specific to 'x' if it's followed by another letter or open paren, or preceded by a letter/close paren.
+      //    e.g. ax -> a*x, xa -> x*a. For 2x, the first rule already covers it.
+      //    For cos(2x), we need 2x -> 2*x. This is covered.
+      //    The most general form: )x -> )*x, x( -> x*(, )a -> )*a, a( -> a*(, ab -> a*b
       .replace(/([)a-zA-Z])([(a-zA-Z])/g, '$1*$2')
+
 
       // 2. Superscripts for powers
       .replace(/²/g, '**2')
@@ -67,35 +73,37 @@ const evaluateEquationForX = (equationString: string, xValue: number): number | 
       // 3. Specific function patterns (e.g., e^, sqrt, trig, log)
       //    Ensure e^ is matched before standalone 'e' might be converted to Math.E
       //    Regex for e^(<balanced_parentheses_expr>) or e^<simple_expr_with_vars_ops>
-      .replace(/e\^(\((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*\)|[a-zA-Z0-9_.\s\/\*\-\+^]+)/gi, 'Math.exp($1)') // Argument can now include ^ for expressions like e^(x^2)
-      .replace(/E\^(\((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*\)|[a-zA-Z0-9_.\s\/\*\-\+^]+)/gi, 'Math.exp($1)') // Case for E^
+      .replace(/e\^(\((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*\)|[a-zA-Z0-9_.\s\/\*\-\+^()]+)/gi, (match, p1) => `Math.exp(${p1})`)
+      .replace(/E\^(\((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*\)|[a-zA-Z0-9_.\s\/\*\-\+^()]+)/gi, (match, p1) => `Math.exp(${p1})`)
+
 
       // Trigonometric functions (case insensitive input, convert to Math.standard)
-      .replace(/\basin\s*\(([^)]*)\)/gi, 'Math.asin($1)') // Must be before sin
-      .replace(/\barcsin\s*\(([^)]*)\)/gi, 'Math.asin($1)')
-      .replace(/\bacos\s*\(([^)]*)\)/gi, 'Math.acos($1)') // Must be before cos
-      .replace(/\barccos\s*\(([^)]*)\)/gi, 'Math.acos($1)')
-      .replace(/\batan\s*\(([^)]*)\)/gi, 'Math.atan($1)') // Must be before tan
-      .replace(/\barctan\s*\(([^)]*)\)/gi, 'Math.atan($1)')
-      .replace(/\bsin\s*\(([^)]*)\)/gi, 'Math.sin($1)')
-      .replace(/\bcos\s*\(([^)]*)\)/gi, 'Math.cos($1)')
-      .replace(/\btan\s*\(([^)]*)\)/gi, 'Math.tan($1)')
-      
+      // Ensure these are processed after implicit multiplication for arguments like '2x'.
+      .replace(/\basin\s*\(([^)]*)\)/gi, (match, p1) => `Math.asin(${p1})`)
+      .replace(/\barcsin\s*\(([^)]*)\)/gi, (match, p1) => `Math.asin(${p1})`)
+      .replace(/\bacos\s*\(([^)]*)\)/gi, (match, p1) => `Math.acos(${p1})`)
+      .replace(/\barccos\s*\(([^)]*)\)/gi, (match, p1) => `Math.acos(${p1})`)
+      .replace(/\batan\s*\(([^)]*)\)/gi, (match, p1) => `Math.atan(${p1})`)
+      .replace(/\barctan\s*\(([^)]*)\)/gi, (match, p1) => `Math.atan(${p1})`)
+      .replace(/\bsin\s*\(([^)]*)\)/gi, (match, p1) => `Math.sin(${p1})`)
+      .replace(/\bcos\s*\(([^)]*)\)/gi, (match, p1) => `Math.cos(${p1})`)
+      .replace(/\btan\s*\(([^)]*)\)/gi, (match, p1) => `Math.tan(${p1})`)
+
       // Logarithmic functions
-      .replace(/\blog\s*\(([^)]*)\)/gi, 'Math.log10($1)') // log base 10
-      .replace(/\bln\s*\(([^)]*)\)/gi, 'Math.log($1)')   // natural log
+      .replace(/\blog\s*\(([^)]*)\)/gi, (match, p1) => `Math.log10(${p1})`) // log base 10
+      .replace(/\bln\s*\(([^)]*)\)/gi, (match, p1) => `Math.log(${p1})`)   // natural log
 
       // Other math functions
-      .replace(/\bsqrt\s*\(([^)]*)\)/gi, 'Math.sqrt($1)')
-      .replace(/\babs\s*\(([^)]*)\)/gi, 'Math.abs($1)')
+      .replace(/\bsqrt\s*\(([^)]*)\)/gi, (match, p1) => `Math.sqrt(${p1})`)
+      .replace(/\babs\s*\(([^)]*)\)/gi, (match, p1) => `Math.abs(${p1})`)
 
       // 4. General exponentiation (carets) - after specific e^
-      .replace(/\^/g, '**') 
+      .replace(/\^/g, '**')
 
       // 5. Constants (after functions that might use 'e' or 'pi' as part of their name)
       .replace(/\bpi\b/gi, 'Math.PI')
-      .replace(/\be\b/g, 'Math.E'); // standalone 'e' for Math.E (MUST be after e^ replacement)
-      
+      .replace(/\be\b/gi, 'Math.E'); // standalone 'e' for Math.E (MUST be after e^ replacement)
+
     const func = new Function('x', `return ${preparedString}`);
     const result = func(xValue);
 
@@ -104,14 +112,14 @@ const evaluateEquationForX = (equationString: string, xValue: number): number | 
     }
     return null; // Handles NaN, Infinity from evaluation
   } catch (error) {
-    // console.error(`Error evaluating equation "${equationString}" (prepared as "${preparedString}") for x=${xValue}:`, error);
+    // console.error(`Error evaluating equation "${equationString}" (raw) -> "${exprToEvaluate}" (stripped) -> "${preparedString}" (prepared) for x=${xValue}:`, error);
     return null;
   }
 };
 
 const generatePointsForEquation = (equationString: string, xMin = -10, xMax = 10, numPoints = 100): GraphDataPoint[] => {
   const points: GraphDataPoint[] = [];
-  if (numPoints <= 1) return points; 
+  if (numPoints <= 1) return points;
   const step = (xMax - xMin) / (numPoints - 1);
   for (let i = 0; i < numPoints; i++) {
     const x = xMin + i * step;
@@ -126,7 +134,7 @@ const generatePointsForEquation = (equationString: string, xMin = -10, xMax = 10
 
 export default function AdvancedCalculatorPage() {
   const [storedValues, setStoredValues] = useState<StoredValue[]>([]);
-  const [directInputValue, setDirectInputValue] = useState<string>(""); 
+  const [directInputValue, setDirectInputValue] = useState<string>("");
 
   const [storedEquations, setStoredEquations] = useState<EquationItem[]>([]);
 
@@ -173,7 +181,7 @@ export default function AdvancedCalculatorPage() {
       ...prev,
       {
         id: `eq-${Date.now()}`,
-        equationString: equationString, 
+        equationString: equationString,
         plotted: false,
         color: lineColors[prev.length % lineColors.length],
       },
@@ -203,7 +211,7 @@ export default function AdvancedCalculatorPage() {
         id: eq.id,
         points: generatePointsForEquation(eq.equationString),
         color: eq.color,
-        name: eq.equationString, 
+        name: eq.equationString,
       }));
   }, [storedEquations]);
 
@@ -285,4 +293,3 @@ export default function AdvancedCalculatorPage() {
     </div>
   );
 }
-
