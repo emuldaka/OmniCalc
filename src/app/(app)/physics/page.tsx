@@ -40,8 +40,8 @@ export default function PhysicsPage() {
   const [activeDialog, setActiveDialog] = useState<ActivePhysicsDialog>(null);
 
   return (
-    <div className="space-y-8 w-full"> {/* Added w-full here */}
-      <Card className="shadow-2xl">
+    <div className="space-y-8 w-full">
+      <Card className="shadow-2xl w-full">
         <CardHeader>
           <CardTitle className="text-4xl font-bold text-primary flex items-center">
             <Atom className="mr-4 h-10 w-10" /> Physics Hub
@@ -52,7 +52,7 @@ export default function PhysicsPage() {
         </CardHeader>
       </Card>
 
-      <Card className="shadow-xl">
+      <Card className="shadow-xl w-full">
         <CardHeader>
           <CardTitle className="text-3xl text-primary flex items-center">
             <SlidersHorizontal className="mr-3 h-8 w-8" /> Physics Calculators
