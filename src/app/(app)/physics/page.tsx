@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Atom, BookOpen, SigmaIcon, Binary, SlidersHorizontal, Zap, Waves, Scaling } from 'lucide-react'; // Removed HelpCircle from here
+import { Atom, BookOpen, SigmaIcon, Binary, SlidersHorizontal, Zap, Waves, Scaling } from 'lucide-react';
 import { PhysicalConstantsDisplay } from '@/components/physics/physical-constants-display';
 import { CommonFormulasSummary } from '@/components/physics/common-formulas-summary';
 import { ParticlePhysicsDataDisplay } from '@/components/physics/particle-physics-data-display';
@@ -25,6 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 type ActivePhysicsDialog =
   | null
@@ -33,7 +34,7 @@ type ActivePhysicsDialog =
   | 'relativity'
   | 'optics'
   | 'electromagnetism'
-  | 'whatGoesUp'; // New dialog type
+  | 'whatGoesUp';
 
 export default function PhysicsPage() {
   const [activeDialog, setActiveDialog] = useState<ActivePhysicsDialog>(null);
@@ -83,11 +84,41 @@ export default function PhysicsPage() {
       </Card>
       
       <Separator className="my-10" />
-      <PhysicalConstantsDisplay />
-      <Separator className="my-10" />
-      <CommonFormulasSummary />
-      <Separator className="my-10" />
-      <ParticlePhysicsDataDisplay />
+
+      <Accordion type="multiple" collapsible className="w-full space-y-6">
+        <AccordionItem value="constants">
+          <AccordionTrigger className="text-2xl font-semibold text-primary hover:text-accent hover:no-underline p-4 rounded-lg data-[state=open]:bg-muted/50">
+            <div className="flex items-center">
+              <SigmaIcon className="mr-3 h-7 w-7" /> Physical Constants
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="pt-0">
+            <PhysicalConstantsDisplay />
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="formulas">
+          <AccordionTrigger className="text-2xl font-semibold text-primary hover:text-accent hover:no-underline p-4 rounded-lg data-[state=open]:bg-muted/50">
+            <div className="flex items-center">
+              <BookOpen className="mr-3 h-7 w-7" /> Common Physics Formulas
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="pt-0">
+            <CommonFormulasSummary />
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="particles">
+          <AccordionTrigger className="text-2xl font-semibold text-primary hover:text-accent hover:no-underline p-4 rounded-lg data-[state=open]:bg-muted/50">
+            <div className="flex items-center">
+              <Binary className="mr-3 h-7 w-7" /> Fundamental Particles & Particle Physics
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="pt-0">
+            <ParticlePhysicsDataDisplay />
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
       
 
       {/* Dialogs */}
@@ -117,7 +148,7 @@ export default function PhysicsPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center">
-               A Universal Truth {/* Removed HelpCircle icon from here */}
+               A Universal Truth
             </AlertDialogTitle>
             <AlertDialogDescription className="text-lg py-4 text-center text-foreground">
               Must Come Down!
@@ -131,4 +162,3 @@ export default function PhysicsPage() {
     </div>
   );
 }
-
