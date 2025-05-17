@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { solveStoichiometryProblem, type StoichiometryInput, type StoichiometryOutput, type Reactant, type TargetProduct, type ActualYield } from "@/ai/flows/solve-stoichiometry-problem";
+import { solveStoichiometryProblem, type StoichiometryInput, type StoichiometryOutput, type Reactant, type TargetProduct, type ActualYield } from "@/actions/ai-actions"; // Updated import path
 import { Loader2, PlusCircle, Trash2, Wand2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -93,7 +93,7 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
       toast({ variant: "destructive", title: "Error", description: "Please enter a chemical equation." });
       return;
     }
-    if (reactants.some(r => !r.formula.trim() || isNaN(r.amount) || r.amount <= 0)) {
+    if (reactants.some(r => !r.formula.trim() || r.amount === undefined || r.amount <= 0)) {
       toast({ variant: "destructive", title: "Error", description: "Please provide valid formula and positive amount for all reactants." });
       return;
     }
@@ -108,21 +108,21 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
 
     const input: StoichiometryInput = {
       unbalancedEquation,
-      reactants: reactants.filter(r => r.formula.trim() && r.amount > 0),
+      reactants: reactants.filter(r => r.formula.trim() && r.amount !== undefined && r.amount > 0),
       targetProducts: targetProducts.filter(tp => tp.formula.trim()),
-      actualYield: actualYield?.formula.trim() && actualYield.amount > 0 ? actualYield : undefined,
+      actualYield: (actualYield?.formula.trim() && actualYield.amount !== undefined && actualYield.amount > 0) ? actualYield : undefined,
     };
 
     try {
       const aiResult = await solveStoichiometryProblem(input);
       setResult(aiResult);
       if (aiResult.errorMessage) {
-        toast({ variant: "destructive", title: "Calculation Error", description: aiResult.errorMessage });
+        toast({ variant: "destructive", title: "Calculation Error", description: aiResult.errorMessage, duration: 7000 });
       }
     } catch (error) {
       console.error("Stoichiometry solving error:", error);
       toast({ variant: "destructive", title: "AI Error", description: "Failed to solve stoichiometry problem." });
-      setResult({ errorMessage: "An unexpected error occurred while contacting the AI." });
+      setResult({ errorMessage: "An unexpected error occurred while contacting the AI.", calculationLog: [] });
     } finally {
       setIsProcessing(false);
     }
@@ -156,7 +156,7 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-grow pr-6 -mr-6 mb-4">
+        <ScrollArea className="flex-grow pr-6 -mr-6 mb-4"> {/* Added ScrollArea */}
           <div className="space-y-6 py-4">
             <div>
               <Label htmlFor="unbalanced-equation" className="text-lg font-medium text-primary">Chemical Equation</Label>
@@ -189,7 +189,7 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
                       </div>
                       <div>
                         <Label htmlFor={`reactant-amount-${index}`}>Amount</Label>
-                        <Input id={`reactant-amount-${index}`} type="number" value={reactant.amount || ""} onChange={(e) => handleReactantChange(index, 'amount', e.target.value)} placeholder="e.g., 2.0" />
+                        <Input id={`reactant-amount-${index}`} type="number" value={reactant.amount ?? ""} onChange={(e) => handleReactantChange(index, 'amount', e.target.value)} placeholder="e.g., 2.0" />
                       </div>
                       <div>
                         <Label htmlFor={`reactant-unit-${index}`}>Unit</Label>
@@ -207,12 +207,12 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 border-t pt-3 mt-3">
                         <div>
                           <Label htmlFor={`reactant-pressure-${index}`}>Pressure</Label>
-                          <Input id={`reactant-pressure-${index}`} type="number" value={reactant.pressure || ""} onChange={(e) => handleReactantChange(index, 'pressure', e.target.value)} placeholder="e.g., 1.0" />
+                          <Input id={`reactant-pressure-${index}`} type="number" value={reactant.pressure ?? ""} onChange={(e) => handleReactantChange(index, 'pressure', e.target.value)} placeholder="e.g., 1.0" />
                         </div>
                          <div>
                           <Label htmlFor={`reactant-pressure-unit-${index}`}>P Unit</Label>
-                           <Select value={reactant.pressureUnit} onValueChange={(val) => handleReactantChange(index, 'pressureUnit', val)}>
-                            <SelectTrigger id={`reactant-pressure-unit-${index}`}><SelectValue placeholder="atm" /></SelectTrigger>
+                           <Select value={reactant.pressureUnit || "atm"} onValueChange={(val) => handleReactantChange(index, 'pressureUnit', val)}>
+                            <SelectTrigger id={`reactant-pressure-unit-${index}`}><SelectValue /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="atm">atm</SelectItem>
                               <SelectItem value="kPa">kPa</SelectItem>
@@ -223,12 +223,12 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
                         </div>
                         <div>
                           <Label htmlFor={`reactant-temp-${index}`}>Temperature</Label>
-                          <Input id={`reactant-temp-${index}`} type="number" value={reactant.temperature || ""} onChange={(e) => handleReactantChange(index, 'temperature', e.target.value)} placeholder="e.g., 298" />
+                          <Input id={`reactant-temp-${index}`} type="number" value={reactant.temperature ?? ""} onChange={(e) => handleReactantChange(index, 'temperature', e.target.value)} placeholder="e.g., 298" />
                         </div>
                         <div>
                           <Label htmlFor={`reactant-temp-unit-${index}`}>T Unit</Label>
-                          <Select value={reactant.temperatureUnit} onValueChange={(val) => handleReactantChange(index, 'temperatureUnit', val)}>
-                            <SelectTrigger id={`reactant-temp-unit-${index}`}><SelectValue placeholder="K" /></SelectTrigger>
+                          <Select value={reactant.temperatureUnit || "K"} onValueChange={(val) => handleReactantChange(index, 'temperatureUnit', val)}>
+                            <SelectTrigger id={`reactant-temp-unit-${index}`}><SelectValue /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="K">K</SelectItem>
                               <SelectItem value="C">°C</SelectItem>
@@ -265,12 +265,12 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
                                     <Input id={`tp-formula-${index}`} value={tp.formula} onChange={(e) => handleTargetProductChange(index, 'formula', e.target.value)} placeholder="e.g., CO2" />
                                 </div>
                                 <div>
-                                   <Label htmlFor={`tp-volume-${index}`} className="flex items-center">
+                                   <Label htmlFor={`tp-volume-${index}`} className="flex items-center mt-2 md:mt-0">
                                         <Input 
                                             type="checkbox" 
                                             id={`tp-volume-${index}`}
-                                            checked={tp.calculateVolume}
-                                            onCheckedChange={(checked) => handleTargetProductChange(index, 'calculateVolume', checked)}
+                                            checked={tp.calculateVolume || false}
+                                            onCheckedChange={(checked) => handleTargetProductChange(index, 'calculateVolume', !!checked)}
                                             className="mr-2 h-4 w-4 accent-primary"
                                         />
                                         Calculate Volume (if gas)
@@ -281,12 +281,12 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3 border-t pt-3 mt-3">
                                     <div>
                                         <Label htmlFor={`tp-pressure-${index}`}>Pressure for Volume</Label>
-                                        <Input id={`tp-pressure-${index}`} type="number" value={tp.pressure || ""} onChange={(e) => handleTargetProductChange(index, 'pressure', e.target.value)} placeholder="e.g., 1.0 (optional)" />
+                                        <Input id={`tp-pressure-${index}`} type="number" value={tp.pressure ?? ""} onChange={(e) => handleTargetProductChange(index, 'pressure', e.target.value)} placeholder="e.g., 1.0 (optional)" />
                                     </div>
                                     <div>
                                         <Label htmlFor={`tp-pressure-unit-${index}`}>P Unit</Label>
-                                        <Select value={tp.pressureUnit} onValueChange={(val) => handleTargetProductChange(index, 'pressureUnit', val)}>
-                                            <SelectTrigger id={`tp-pressure-unit-${index}`}><SelectValue placeholder="atm" /></SelectTrigger>
+                                        <Select value={tp.pressureUnit || "atm"} onValueChange={(val) => handleTargetProductChange(index, 'pressureUnit', val)}>
+                                            <SelectTrigger id={`tp-pressure-unit-${index}`}><SelectValue /></SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="atm">atm</SelectItem><SelectItem value="kPa">kPa</SelectItem><SelectItem value="mmHg">mmHg</SelectItem><SelectItem value="torr">torr</SelectItem>
                                             </SelectContent>
@@ -294,12 +294,12 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
                                     </div>
                                     <div>
                                         <Label htmlFor={`tp-temp-${index}`}>Temp for Volume</Label>
-                                        <Input id={`tp-temp-${index}`} type="number" value={tp.temperature || ""} onChange={(e) => handleTargetProductChange(index, 'temperature', e.target.value)} placeholder="e.g., 298 (optional)" />
+                                        <Input id={`tp-temp-${index}`} type="number" value={tp.temperature ?? ""} onChange={(e) => handleTargetProductChange(index, 'temperature', e.target.value)} placeholder="e.g., 298 (optional)" />
                                     </div>
                                      <div>
                                         <Label htmlFor={`tp-temp-unit-${index}`}>T Unit</Label>
-                                        <Select value={tp.temperatureUnit} onValueChange={(val) => handleTargetProductChange(index, 'temperatureUnit', val)}>
-                                            <SelectTrigger id={`tp-temp-unit-${index}`}><SelectValue placeholder="K" /></SelectTrigger>
+                                        <Select value={tp.temperatureUnit || "K"} onValueChange={(val) => handleTargetProductChange(index, 'temperatureUnit', val)}>
+                                            <SelectTrigger id={`tp-temp-unit-${index}`}><SelectValue /></SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="K">K</SelectItem><SelectItem value="C">°C</SelectItem><SelectItem value="F">°F</SelectItem>
                                             </SelectContent>
@@ -327,7 +327,7 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
                     </div>
                     <div>
                         <Label htmlFor="actualyield-amount">Amount</Label>
-                        <Input id="actualyield-amount" type="number" value={actualYield?.amount || ""} onChange={(e) => handleActualYieldChange('amount', e.target.value)} placeholder="e.g., 15.0" />
+                        <Input id="actualyield-amount" type="number" value={actualYield?.amount ?? ""} onChange={(e) => handleActualYieldChange('amount', e.target.value)} placeholder="e.g., 15.0" />
                     </div>
                     <div>
                         <Label htmlFor="actualyield-unit">Unit</Label>
@@ -342,7 +342,6 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
                 </CardContent>
             </Card>
             
-
             <Button onClick={handleSubmit} disabled={isProcessing} className="w-full text-lg py-3">
               {isProcessing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Wand2 className="mr-2 h-5 w-5" />}
               Solve with AI
