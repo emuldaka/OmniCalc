@@ -52,19 +52,14 @@ const evaluateEquationForX = (equationString: string, xValue: number): number | 
 
     // IMPORTANT: Order of replacements is crucial
     let preparedString = exprToEvaluate
-      // 1. Implicit multiplication (MUST run before function keyword replacements)
-      //    number followed by letter or parenthesis: 2x -> 2*x, 2( -> 2*(
-      .replace(/(\d(?:\.\d+)?)([a-zA-Z(])/g, '$1*$2')
-      //    letter or closing parenthesis followed by number: x2 -> x*2, )2 -> )*2
-      .replace(/([a-zA-Z)])(\d(?:\.\d+)?)/g, '$1*$2')
-      //    closing parenthesis or letter followed by opening parenthesis or letter: )( -> )*(, x( -> x*(, xy -> x*y
-      //    This rule for xy might be too aggressive if 'x' is the only variable and other letters are part of function names.
-      //    Let's make it specific to 'x' if it's followed by another letter or open paren, or preceded by a letter/close paren.
-      //    e.g. ax -> a*x, xa -> x*a. For 2x, the first rule already covers it.
-      //    For cos(2x), we need 2x -> 2*x. This is covered.
-      //    The most general form: )x -> )*x, x( -> x*(, )a -> )*a, a( -> a*(, ab -> a*b
-      .replace(/([)a-zA-Z])([(a-zA-Z])/g, '$1*$2')
-
+      // 1. Implicit multiplication: More targeted rules
+      //    number<->x, number<->(, x<->number, )<->number, x<->x, x<->(, )<->x, )<->(
+      //    Handles: 2x, 2(x+1)
+      .replace(/(\d(?:\.\d+)?)([xX(])/gi, '$1*$2')
+      //    Handles: x2, (x+1)2
+      .replace(/([xX)])(\d(?:\.\d+)?)/gi, '$1*$2')
+      //    Handles: xx, x(x), (x)x, (x)(x), )x, x(
+      .replace(/([xX)])([xX(])/gi, '$1*$2')
 
       // 2. Superscripts for powers
       .replace(/²/g, '**2')
@@ -72,13 +67,10 @@ const evaluateEquationForX = (equationString: string, xValue: number): number | 
 
       // 3. Specific function patterns (e.g., e^, sqrt, trig, log)
       //    Ensure e^ is matched before standalone 'e' might be converted to Math.E
-      //    Regex for e^(<balanced_parentheses_expr>) or e^<simple_expr_with_vars_ops>
       .replace(/e\^(\((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*\)|[a-zA-Z0-9_.\s\/\*\-\+^()]+)/gi, (match, p1) => `Math.exp(${p1})`)
       .replace(/E\^(\((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*\)|[a-zA-Z0-9_.\s\/\*\-\+^()]+)/gi, (match, p1) => `Math.exp(${p1})`)
 
-
       // Trigonometric functions (case insensitive input, convert to Math.standard)
-      // Ensure these are processed after implicit multiplication for arguments like '2x'.
       .replace(/\basin\s*\(([^)]*)\)/gi, (match, p1) => `Math.asin(${p1})`)
       .replace(/\barcsin\s*\(([^)]*)\)/gi, (match, p1) => `Math.asin(${p1})`)
       .replace(/\bacos\s*\(([^)]*)\)/gi, (match, p1) => `Math.acos(${p1})`)
@@ -112,7 +104,7 @@ const evaluateEquationForX = (equationString: string, xValue: number): number | 
     }
     return null; // Handles NaN, Infinity from evaluation
   } catch (error) {
-    // console.error(`Error evaluating equation "${equationString}" (raw) -> "${exprToEvaluate}" (stripped) -> "${preparedString}" (prepared) for x=${xValue}:`, error);
+    console.error(`Error evaluating equation "${equationString}" (raw) -> "${exprToEvaluate}" (stripped) -> "${preparedString}" (prepared) for x=${xValue}:`, error);
     return null;
   }
 };
@@ -182,7 +174,7 @@ export default function AdvancedCalculatorPage() {
       {
         id: `eq-${Date.now()}`,
         equationString: equationString,
-        plotted: false,
+        plotted: false, // Equations are not plotted by default
         color: lineColors[prev.length % lineColors.length],
       },
     ]);
@@ -211,7 +203,7 @@ export default function AdvancedCalculatorPage() {
         id: eq.id,
         points: generatePointsForEquation(eq.equationString),
         color: eq.color,
-        name: eq.equationString,
+        name: eq.equationString.length > 30 ? eq.equationString.substring(0, 27) + "..." : eq.equationString,
       }));
   }, [storedEquations]);
 
@@ -232,7 +224,7 @@ export default function AdvancedCalculatorPage() {
         {/* Column 1: Calculator, Direct Numeric Input, and Stored Numeric Values */}
         <div className="flex flex-col space-y-4">
           <AdvancedCalculatorLayout onStoreResult={handleStoreResultFromCalculator} />
-          <Card className="shadow-md">
+           <Card className="shadow-md">
             <CardHeader>
               <CardTitle className="text-xl text-primary flex items-center">
                 <PlusCircle className="mr-2 h-5 w-5"/> Add Numeric Value to Storage
@@ -293,3 +285,4 @@ export default function AdvancedCalculatorPage() {
     </div>
   );
 }
+
