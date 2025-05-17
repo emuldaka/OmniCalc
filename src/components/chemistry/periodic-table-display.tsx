@@ -19,7 +19,7 @@ const NUM_COLUMNS = 18; // Max group
 
 export function PeriodicTableDisplay() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all'); // Default to "all"
   const [selectedElement, setSelectedElement] = useState<ElementData | null>(null);
 
   const categoryList = useMemo(() => getElementCategoryList(), []);
@@ -30,10 +30,11 @@ export function PeriodicTableDisplay() {
         el.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         el.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
         el.atomicNumber.toString().includes(searchTerm);
-      const matchesCategory = selectedCategory === '' || el.category === selectedCategory;
+      // Treat "all" as no category filter
+      const matchesCategory = selectedCategoryFilter === 'all' || el.category === selectedCategoryFilter;
       return matchesSearch && matchesCategory;
     });
-  }, [searchTerm, selectedCategory]);
+  }, [searchTerm, selectedCategoryFilter]);
 
   // Create a map for quick lookup of elements by their grid position
   const elementGridMap = useMemo(() => {
@@ -76,12 +77,12 @@ export function PeriodicTableDisplay() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-grow"
           />
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <Select value={selectedCategoryFilter} onValueChange={setSelectedCategoryFilter}>
             <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="all">All Categories</SelectItem> {/* Changed value from "" to "all" */}
               {categoryList.map(cat => (
                 <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
               ))}
@@ -149,3 +150,4 @@ export function PeriodicTableDisplay() {
     </Card>
   );
 }
+
