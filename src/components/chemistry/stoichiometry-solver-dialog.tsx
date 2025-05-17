@@ -17,8 +17,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox"; // Corrected import
 import { useToast } from "@/hooks/use-toast";
-import { solveStoichiometryProblem, type StoichiometryInput, type StoichiometryOutput, type Reactant, type TargetProduct, type ActualYield } from "@/actions/ai-actions"; // Updated import path
+import { solveStoichiometryProblem, type StoichiometryInput, type StoichiometryOutput, type Reactant, type TargetProduct, type ActualYield } from "@/actions/ai-actions";
 import { Loader2, PlusCircle, Trash2, Wand2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -156,8 +157,8 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-grow pr-6 -mr-6 mb-4"> {/* Added ScrollArea */}
-          <div className="space-y-6 py-4">
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="space-y-6 py-4 px-6">
             <div>
               <Label htmlFor="unbalanced-equation" className="text-lg font-medium text-primary">Chemical Equation</Label>
               <Textarea
@@ -265,9 +266,8 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
                                     <Input id={`tp-formula-${index}`} value={tp.formula} onChange={(e) => handleTargetProductChange(index, 'formula', e.target.value)} placeholder="e.g., CO2" />
                                 </div>
                                 <div>
-                                   <Label htmlFor={`tp-volume-${index}`} className="flex items-center mt-2 md:mt-0">
-                                        <Input 
-                                            type="checkbox" 
+                                   <Label htmlFor={`tp-volume-${index}`} className="flex items-center mt-2 md:mt-0 pt-2"> {/* Added pt-2 for alignment */}
+                                        <Checkbox
                                             id={`tp-volume-${index}`}
                                             checked={tp.calculateVolume || false}
                                             onCheckedChange={(checked) => handleTargetProductChange(index, 'calculateVolume', !!checked)}
@@ -424,7 +424,7 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
           </div>
         </ScrollArea>
         
-        <DialogFooter className="sm:justify-between mt-auto pt-4 border-t">
+        <DialogFooter className="sm:justify-between pt-4 border-t">
           <Button type="button" variant="outline" onClick={resetForm}>Reset Form</Button>
           <DialogClose asChild>
             <Button type="button" variant="secondary">Close</Button>
@@ -435,3 +435,5 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
   );
 }
 
+
+    
