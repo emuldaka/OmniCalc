@@ -9,7 +9,7 @@ import { Binary } from "lucide-react"; // Using Binary as placeholder icon
 
 export function ParticlePhysicsDataDisplay() {
   return (
-    <Card className="shadow-lg">
+    <Card className="shadow-lg w-full">
       <CardHeader>
         <CardTitle className="text-2xl text-primary flex items-center">
           <Binary className="mr-3 h-7 w-7" /> Fundamental Particles & Particle Physics

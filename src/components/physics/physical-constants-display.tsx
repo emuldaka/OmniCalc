@@ -31,7 +31,7 @@ export function PhysicalConstantsDisplay() {
   };
 
   return (
-    <Card className="shadow-lg">
+    <Card className="shadow-lg w-full">
       <CardHeader>
         <CardTitle className="text-2xl text-primary flex items-center">
           <SigmaIcon className="mr-3 h-7 w-7" /> Physical Constants
