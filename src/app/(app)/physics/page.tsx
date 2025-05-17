@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Atom, BookOpen, SigmaIcon, Binary, SlidersHorizontal, HelpCircle, Zap, Waves, Scaling } from 'lucide-react'; // Using some icons as placeholders
+import { Atom, BookOpen, SigmaIcon, Binary, SlidersHorizontal, HelpCircle, Zap, Waves, Scaling } from 'lucide-react';
 import { PhysicalConstantsDisplay } from '@/components/physics/physical-constants-display';
 import { CommonFormulasSummary } from '@/components/physics/common-formulas-summary';
 import { ParticlePhysicsDataDisplay } from '@/components/physics/particle-physics-data-display';
@@ -15,6 +15,16 @@ import { RelativityCalculatorDialog } from '@/components/physics/relativity-calc
 import { OpticsCalculatorDialog } from '@/components/physics/optics-calculator-dialog';
 import { ElectromagnetismCalculatorDialog } from '@/components/physics/electromagnetism-calculator-dialog';
 import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type ActivePhysicsDialog =
   | null
@@ -22,7 +32,8 @@ type ActivePhysicsDialog =
   | 'forceEnergy'
   | 'relativity'
   | 'optics'
-  | 'electromagnetism';
+  | 'electromagnetism'
+  | 'whatGoesUp'; // New dialog type
 
 export default function PhysicsPage() {
   const [activeDialog, setActiveDialog] = useState<ActivePhysicsDialog>(null);
@@ -65,6 +76,9 @@ export default function PhysicsPage() {
           <Button onClick={() => setActiveDialog('electromagnetism')} variant="outline" size="lg" className="h-auto py-4 text-base">
             Electromagnetism Calculator
           </Button>
+          <Button onClick={() => setActiveDialog('whatGoesUp')} variant="outline" size="lg" className="h-auto py-4 text-base">
+            <HelpCircle className="mr-2 h-5 w-5" /> What Goes Up...
+          </Button>
         </CardContent>
       </Card>
       
@@ -97,7 +111,23 @@ export default function PhysicsPage() {
         isOpen={activeDialog === 'electromagnetism'}
         onClose={() => setActiveDialog(null)}
       />
+      
+      {/* "What Goes Up" Dialog */}
+      <AlertDialog open={activeDialog === 'whatGoesUp'} onOpenChange={(open) => { if (!open) setActiveDialog(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center">
+              <HelpCircle className="mr-2 h-5 w-5 text-primary" /> A Universal Truth
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-lg py-4 text-center text-foreground">
+              Must Come Down!
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setActiveDialog(null)}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
-
