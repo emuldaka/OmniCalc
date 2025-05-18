@@ -16,14 +16,14 @@ export function CalculatorDisplay({ mainDisplay, secondaryDisplay }: CalculatorD
     : mainDisplay;
 
   return (
-    <div className="bg-muted/50 p-6 rounded-lg text-right shadow-inner mb-4">
+    <div className="bg-muted/50 p-4 rounded-lg text-right shadow-inner mb-4">
       {secondaryDisplay && (
-        <div className="text-muted-foreground text-xl h-8 truncate" title={secondaryDisplay}>
+        <div className="text-muted-foreground text-xl h-7 truncate" title={secondaryDisplay}>
           {secondaryDisplay}
         </div>
       )}
       <div 
-        className="text-foreground text-4xl font-mono font-bold h-20 flex items-center justify-center truncate"
+        className="text-foreground text-4xl font-mono font-bold h-16 flex items-center justify-center truncate"
         title={formattedMainDisplay}
         aria-live="polite"
       >

@@ -68,16 +68,16 @@ export function CalculatorInstance({ instanceId }: CalculatorInstanceProps) {
   }
 
   return (
-    <Card className="w-full shadow-2xl flex flex-col h-fit"> {/* Added h-fit */}
-      <CardHeader className="pb-2 pt-4 px-4"> {/* Reduced padding */}
+    <Card className="w-full shadow-2xl flex flex-col h-fit">
+      <CardHeader className="pb-1 pt-3 px-3"> 
         {/* <CardTitle className="text-lg text-center text-primary">Calculator {instanceId}</CardTitle> */}
       </CardHeader>
-      <CardContent className="flex-grow flex flex-col p-4"> {/* Added flex-grow and flex-col */}
+      <CardContent className="flex-grow flex flex-col p-3">
         <CalculatorDisplay 
           mainDisplay={state.error ? "Error" : state.displayValue}
           secondaryDisplay={secondaryDisplayContent}
         />
-        <div className="mt-auto"> {/* Pushes keypad to bottom if CardContent has extra space */}
+        <div className="mt-auto"> 
             <CalculatorKeypad onButtonClick={handleKeypadClick} currentState={state} />
         </div>
       </CardContent>

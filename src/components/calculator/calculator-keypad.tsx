@@ -13,13 +13,13 @@ interface CalculatorKeypadProps {
 
 export function CalculatorKeypad({ onButtonClick, currentState }: CalculatorKeypadProps) {
   return (
-    <div className="grid grid-cols-4 gap-2">
+    <div className="grid grid-cols-4 gap-1">
       {calculatorButtons.map((btn) => (
         <Button
           key={btn.label}
           variant={btn.className && (btn.className.includes("bg-primary") || btn.className.includes("bg-accent") || btn.className.includes("bg-destructive")) ? "default" : "secondary"}
           className={cn(
-            "text-xl h-16 w-full rounded-md shadow-md focus:ring-2 focus:ring-ring focus:ring-offset-1", // Changed text-2xl h-20 to text-xl h-16
+            "text-lg h-14 w-full rounded-md shadow-md focus:ring-2 focus:ring-ring focus:ring-offset-1", 
             "active:scale-95 transition-transform duration-75",
             btn.className,
             // Example of dynamic styling based on state:
