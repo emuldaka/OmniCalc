@@ -36,22 +36,28 @@ const evaluateEquationForX = (equationString: string, xValue: number): number | 
   try {
     let exprToEvaluate = equationString;
 
+    // Strip common prefixes like f(x)=, y=
     const prefixMatch = exprToEvaluate.match(/^(?:f\(x\)|y|g\(x\))\s*=\s*(.*)/i);
     if (prefixMatch && prefixMatch[1]) {
       exprToEvaluate = prefixMatch[1];
     }
     
+    // More robust implicit multiplication and function parsing
     let preparedString = exprToEvaluate
-      .replace(/(?<![a-zA-Z0-9_])([0-9.]+)([xX(])/gi, '$1*$2') // Number before x or (
-      .replace(/([xX)])([0-9.(]+)/gi, '$1*$2') // x or ) before number or (
-      .replace(/([xX)])([xX(])/gi, '$1*$2') // x or ) before x or (
-      .replace(/(\))(\()/gi, '$1*$2') // Closing paren before opening paren
+      // Implicit multiplication: number before x or (, x or ) before number or (, x or ) before x or (, ) before (
+      .replace(/(?<![a-zA-Z0-9_])([0-9.]+)([xX(a-zA-Z])/gi, '$1*$2') // number before x or ( or letter (for functions like 2sin(x))
+      .replace(/([xX)])([0-9.(a-zA-Z])/gi, '$1*$2') // x or ) before number or ( or letter
+      .replace(/([xX)])([xX(])/gi, '$1*$2')    // x or ) before x or (
+      .replace(/(\))(\()/gi, '$1*$2')          // ) before (
+      // Superscripts
       .replace(/²/g, '**2')
       .replace(/³/g, '**3')
-      .replace(/e\^\(([^)]*)\)/gi, (match, p1) => `Math.exp(${p1})`) // e^(expr)
-      .replace(/E\^\(([^)]*)\)/gi, (match, p1) => `Math.exp(${p1})`) // E^(expr)
-      .replace(/e\^([a-zA-Z0-9_.\/*\-+^()]+)/gi, (match, p1) => `Math.exp(${p1})`) // e^term (no parens)
-      .replace(/E\^([a-zA-Z0-9_.\/*\-+^()]+)/gi, (match, p1) => `Math.exp(${p1})`) // E^term (no parens)
+      // Named functions (order matters for things like e^ vs e)
+      // Match "func(...)" and use callback to ensure argument is treated literally
+      .replace(/e\^\(([^)]*)\)/gi, (match, p1) => `Math.exp(${p1})`)
+      .replace(/E\^\(([^)]*)\)/gi, (match, p1) => `Math.exp(${p1})`)
+      .replace(/e\^([a-zA-Z0-9_.\/*\-+^()]+)/gi, (match, p1) => `Math.exp(${p1})`) // For e^term without parens
+      .replace(/E\^([a-zA-Z0-9_.\/*\-+^()]+)/gi, (match, p1) => `Math.exp(${p1})`) // For E^term without parens
       .replace(/\basin\s*\(([^)]*)\)/gi, (match, p1) => `Math.asin(${p1})`)
       .replace(/\barcsin\s*\(([^)]*)\)/gi, (match, p1) => `Math.asin(${p1})`)
       .replace(/\bacos\s*\(([^)]*)\)/gi, (match, p1) => `Math.acos(${p1})`)
@@ -65,9 +71,11 @@ const evaluateEquationForX = (equationString: string, xValue: number): number | 
       .replace(/\bln\s*\(([^)]*)\)/gi, (match, p1) => `Math.log(${p1})`)
       .replace(/\bsqrt\s*\(([^)]*)\)/gi, (match, p1) => `Math.sqrt(${p1})`)
       .replace(/\babs\s*\(([^)]*)\)/gi, (match, p1) => `Math.abs(${p1})`)
+      // General exponentiation
       .replace(/\^/g, '**')
+      // Constants (pi and e should be last to avoid conflicts with function names like 'exp')
       .replace(/\bpi\b/gi, 'Math.PI')
-      .replace(/\be\b/gi, 'Math.E'); // Standalone 'e' should be last
+      .replace(/\be\b/gi, 'Math.E'); // Standalone 'e' for constant
 
     const func = new Function('x', `return ${preparedString}`);
     const result = func(xValue);
@@ -188,47 +196,45 @@ export default function GraphingPage() {
         </CardHeader>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Column 1: Graph 1 */}
-        <div className="flex flex-col space-y-4">
-          <GraphingSection 
-            data={graphDataForPlot1} 
-            onClearPlots={() => handleClearPlotsForGraph(1)}
-            graphTitle="Graph 1"
-          />
-        </div>
+      {/* Controls Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <FxCalculatorSection onAddEquation={handleAddEquation} />
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-2xl text-primary flex items-center">
+              <FunctionSquare className="mr-3 h-7 w-7" /> Stored Equations
+            </CardTitle>
+            <CardDescription>
+              Manage your equations. Check to plot them on the desired graph (G1, G2, G3).
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <StoredEquationsContainer
+              equations={storedEquations}
+              onTogglePlot={handleToggleEquationPlotOnGraph}
+              onDeleteEquation={handleDeleteEquation}
+            />
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Column 2: f(x) Equation Definer, Stored Equations, Graph 2, Graph 3 */}
-        <div className="flex flex-col space-y-4">
-          <FxCalculatorSection onAddEquation={handleAddEquation} />
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-2xl text-primary flex items-center">
-                <FunctionSquare className="mr-3 h-7 w-7" /> Stored Equations
-              </CardTitle>
-              <CardDescription>
-                Manage your equations. Check to plot them on the desired graph (G1, G2, G3).
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <StoredEquationsContainer
-                equations={storedEquations}
-                onTogglePlot={handleToggleEquationPlotOnGraph}
-                onDeleteEquation={handleDeleteEquation}
-              />
-            </CardContent>
-          </Card>
-          <GraphingSection 
-            data={graphDataForPlot2} 
-            onClearPlots={() => handleClearPlotsForGraph(2)}
-            graphTitle="Graph 2"
-          />
-          <GraphingSection 
-            data={graphDataForPlot3} 
-            onClearPlots={() => handleClearPlotsForGraph(3)}
-            graphTitle="Graph 3"
-          />
-        </div>
+      {/* Graphs Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <GraphingSection 
+          data={graphDataForPlot1} 
+          onClearPlots={() => handleClearPlotsForGraph(1)}
+          graphTitle="Graph 1"
+        />
+        <GraphingSection 
+          data={graphDataForPlot2} 
+          onClearPlots={() => handleClearPlotsForGraph(2)}
+          graphTitle="Graph 2"
+        />
+        <GraphingSection 
+          data={graphDataForPlot3} 
+          onClearPlots={() => handleClearPlotsForGraph(3)}
+          graphTitle="Graph 3"
+        />
       </div>
     </div>
   );
