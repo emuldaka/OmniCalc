@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calculator, ArrowRightLeft, Settings, Sigma, BeakerIcon, LineChart, FlaskConical, Atom } from "lucide-react"; // Added Atom
+import { Calculator, ArrowRightLeft, Settings, Sigma, BeakerIcon, LineChart, FlaskConical, Atom, Landmark } from "lucide-react"; // Added Landmark
 import {
   Sidebar,
   SidebarHeader,
@@ -23,7 +23,8 @@ const navItems = [
   { href: "/advanced-calculator", label: "Advanced Calc", icon: BeakerIcon },
   { href: "/graphing", label: "Graphing", icon: LineChart },
   { href: "/chemistry", label: "Chemistry", icon: FlaskConical },
-  { href: "/physics", label: "Physics", icon: Atom }, // New Physics item
+  { href: "/physics", label: "Physics", icon: Atom },
+  { href: "/banking", label: "Banking", icon: Landmark }, // New Banking item
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -68,3 +69,4 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
+
