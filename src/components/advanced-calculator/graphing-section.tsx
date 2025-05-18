@@ -10,19 +10,20 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Line, ResponsiveContainer, Legend } from "recharts";
-import type { FunctionPlotData } from "@/app/(app)/advanced-calculator/page";
+import type { FunctionPlotData } from "@/app/(app)/graphing/page"; // Updated path
 import { Eraser } from "lucide-react";
 
 interface GraphingSectionProps {
-  data: FunctionPlotData[]; // Array of function data to plot
-  onClearPlots: () => void;
+  data: FunctionPlotData[];
+  onClearPlots: () => void; // Simplified: parent will know which graph via closure
+  graphTitle: string;
 }
 
-export function GraphingSection({ data, onClearPlots }: GraphingSectionProps) {
+export function GraphingSection({ data, onClearPlots, graphTitle }: GraphingSectionProps) {
   return (
-    <Card className="shadow-lg h-full flex flex-col min-h-[400px]"> {/* Ensure min height */}
+    <Card className="shadow-lg h-full flex flex-col min-h-[400px]">
       <CardHeader>
-        <CardTitle className="text-2xl text-primary">Function Graph Plot</CardTitle>
+        <CardTitle className="text-2xl text-primary">{graphTitle}</CardTitle>
         <CardDescription>
           Visualize your selected equations. Plotted functions will appear below.
         </CardDescription>
@@ -33,7 +34,7 @@ export function GraphingSection({ data, onClearPlots }: GraphingSectionProps) {
             <LineChart
               margin={{
                 top: 20,
-                right: 30, // Increased right margin for labels
+                right: 30,
                 left: 20,
                 bottom: 20,
               }}
@@ -88,14 +89,14 @@ export function GraphingSection({ data, onClearPlots }: GraphingSectionProps) {
           </ChartContainer>
         ) : (
           <div className="flex items-center justify-center h-full text-muted-foreground">
-            <p>No equations selected for plotting. Check items in 'Stored Equations' to plot.</p>
+            <p>No equations selected for plotting on this graph.</p>
           </div>
         )}
       </CardContent>
       <div className="p-4 border-t">
         <Button onClick={onClearPlots} variant="outline" className="w-full">
           <Eraser className="mr-2 h-4 w-4" />
-          Clear All Plotted Equations
+          Clear Plotted Equations on This Graph
         </Button>
       </div>
     </Card>

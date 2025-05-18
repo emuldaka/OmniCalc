@@ -2,7 +2,7 @@
 // src/components/advanced-calculator/stored-equations-container.tsx
 "use client";
 
-import type { EquationItem } from "@/app/(app)/advanced-calculator/page";
+import type { EquationItem } from "@/app/(app)/graphing/page"; // Updated path
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,7 +11,7 @@ import { Trash2, LineChart } from "lucide-react";
 
 interface StoredEquationsContainerProps {
   equations: EquationItem[];
-  onTogglePlot: (id: string) => void;
+  onTogglePlot: (id: string, graphNumber: 1 | 2 | 3) => void;
   onDeleteEquation: (id: string) => void;
 }
 
@@ -35,31 +35,35 @@ export function StoredEquationsContainer({
         {equations.map((item) => (
           <Card key={item.id} className="p-3 shadow-sm bg-background hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Checkbox
-                  id={`plot-eq-${item.id}`}
-                  checked={item.plotted}
-                  onCheckedChange={() => onTogglePlot(item.id)}
-                  aria-label={`Plot equation ${item.equationString}`}
-                  className="mt-1"
-                />
-                <div>
-                  <label
-                    htmlFor={`plot-eq-${item.id}`}
-                    className="font-mono text-sm cursor-pointer hover:text-primary"
-                  >
-                    y = {item.equationString}
-                  </label>
-                  <div className="flex items-center text-xs text-muted-foreground">
-                     <LineChart className="h-3 w-3 mr-1.5" style={{ color: item.color }} /> Plot Color
-                  </div>
+              <div className="flex-1">
+                <label
+                  className="font-mono text-sm cursor-pointer hover:text-primary block truncate"
+                  title={item.equationString}
+                >
+                  y = {item.equationString}
+                </label>
+                <div className="flex items-center text-xs text-muted-foreground mt-1">
+                  <LineChart className="h-3 w-3 mr-1.5" style={{ color: item.color }} /> Plot Color
                 </div>
+              </div>
+              <div className="flex items-center space-x-2 ml-4">
+                {[1, 2, 3].map(graphNum => (
+                  <div key={graphNum} className="flex flex-col items-center">
+                     <label htmlFor={`plot-g${graphNum}-eq-${item.id}`} className="text-xs mb-0.5">G{graphNum}</label>
+                    <Checkbox
+                      id={`plot-g${graphNum}-eq-${item.id}`}
+                      checked={graphNum === 1 ? item.plottedGraph1 : graphNum === 2 ? item.plottedGraph2 : item.plottedGraph3}
+                      onCheckedChange={() => onTogglePlot(item.id, graphNum as 1 | 2 | 3)}
+                      aria-label={`Plot on Graph ${graphNum} equation ${item.equationString}`}
+                    />
+                  </div>
+                ))}
               </div>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => onDeleteEquation(item.id)}
-                className="text-destructive hover:bg-destructive/10"
+                className="text-destructive hover:bg-destructive/10 ml-2"
                 aria-label={`Delete equation ${item.equationString}`}
               >
                 <Trash2 className="h-4 w-4" />
