@@ -44,16 +44,16 @@ const featureCards: FeatureCardProps[] = [
     description: "Explore elements, reactions, and utilize chemistry-specific calculators.",
   },
   {
-    href: "/physics",
-    icon: Atom,
-    title: "Physics Hub",
-    description: "Discover physical constants, common formulas, particles, and physics tools.",
-  },
-  {
     href: "/banking",
     icon: Landmark,
     title: "Banking Calculators",
     description: "Tools for managing credit cards, loans, bonds, and savings strategies.",
+  },
+  {
+    href: "/physics",
+    icon: Atom,
+    title: "Physics Hub",
+    description: "Discover physical constants, common formulas, particles, and physics tools.",
   },
 ];
 
