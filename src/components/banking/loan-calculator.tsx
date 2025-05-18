@@ -35,7 +35,7 @@ export function LoanCalculator() {
   const calculateLoanDetails = () => {
     const numLoanAmount = parseFloat(loanAmount);
     const numAnnualRate = parseFloat(annualInterestRate) / 100;
-    const numTermYears = parseInt(loanTermYears);
+    const numTermYears = parseFloat(loanTermYears); // Changed from parseInt
     const numDownPayment = parseFloat(downPayment) || 0;
     const numExtraMonthlyPayment = parseFloat(extraMonthlyPayment) || 0;
 
@@ -77,14 +77,16 @@ export function LoanCalculator() {
     const n_original = numTermYears * 12; // Original total number of payments
 
     let M_base: number; // Base standard monthly payment
-    if (r === 0) {
+    if (P === 0) { // If principal is zero (loan amount equals down payment)
+        M_base = 0;
+    } else if (r === 0) { // Zero interest rate
         M_base = P / n_original;
     } else {
         M_base = P * (r * Math.pow(1 + r, n_original)) / (Math.pow(1 + r, n_original) - 1);
     }
     
     if (!isFinite(M_base) || M_base < 0) {
-        toast({variant: "destructive", title: "Error", description: "Error calculating base monthly payment."});
+        toast({variant: "destructive", title: "Error", description: "Error calculating base monthly payment. Check inputs like term and rate."});
         return;
     }
     setMonthlyPayment(formatNumber(M_base));
@@ -95,81 +97,92 @@ export function LoanCalculator() {
         setFirstPaymentInterest(formatNumber(Math.max(0, interestOfFirstStdPayment)));
     } else if (P > 0 && r === 0) {
         setFirstPaymentInterest(formatNumber(0));
+    } else {
+        setFirstPaymentInterest(null);
     }
 
 
     // Determine effective monthly payment for payoff calculation
     let M_effective_for_payoff = M_base;
-    if (isBiWeekly) {
+    if (isBiWeekly && M_base > 0) { // Only apply bi-weekly if there's a base payment
       M_effective_for_payoff = M_base * (13 / 12); // 26 half-payments = 13 full payments
       setBiWeeklyPaymentDisplay(formatNumber(M_base / 2));
+    } else if (!isBiWeekly) {
+      setBiWeeklyPaymentDisplay(null); // Clear if not bi-weekly
     }
+
     const M_total_for_payoff = M_effective_for_payoff + numExtraMonthlyPayment;
     
     let n_actual_months: number;
+    if (P === 0) {
+      setPayoffTime("No loan amount after down payment.");
+      setTotalInterest(formatNumber(0));
+      setTotalCost(formatNumber(0)); // Total cost is just the down payment if P=0
+      setOriginalPayoffTime(n_original > 0 ? formatPayoffTime(n_original) : "N/A");
+      setInterestSaved(formatNumber(0));
+      return;
+    }
+
     if (M_total_for_payoff <= 0 && P > 0) {
         toast({variant: "destructive", title: "Warning", description: "Total monthly payment is zero or less. Loan will not be paid off."});
         setPayoffTime("Loan will not be paid off.");
         return;
     }
-    if (P === 0) {
-      setPayoffTime("No loan amount after down payment.");
-      setTotalInterest(formatNumber(0));
-      setTotalCost(formatNumber(0));
-      setOriginalPayoffTime("N/A");
-      setInterestSaved(formatNumber(0));
-      setFirstPaymentInterest(formatNumber(0));
-      return;
-    }
 
-    if (r === 0) {
+    if (r === 0) { // Zero interest
         n_actual_months = P / M_total_for_payoff;
     } else {
-        if (M_total_for_payoff <= P * r && P > 0) {
+        if (M_total_for_payoff <= P * r && P > 0) { // Payment doesn't cover interest
             toast({variant: "destructive", title: "Warning", description: "Total monthly payment does not cover interest. Loan balance will increase or never be paid off.", duration: 7000});
             setPayoffTime("Balance will increase or never be paid off.");
             return;
         }
+        // NPER formula
         n_actual_months = -Math.log(1 - (P * r) / M_total_for_payoff) / Math.log(1 + r);
     }
 
     if (!isFinite(n_actual_months) || n_actual_months < 0) {
-        toast({variant: "destructive", title: "Error", description: "Cannot calculate new payoff time. Check inputs."});
+        toast({variant: "destructive", title: "Error", description: "Cannot calculate new payoff time. Check inputs (e.g., payment might be too low)."});
         setPayoffTime("Error calculating payoff time.");
         return;
     }
 
-    const actualYears = Math.floor(n_actual_months / 12);
-    const actualRemainingMonths = Math.ceil(n_actual_months % 12);
-    let actualPayoffString = "";
-    if (actualYears > 0) actualPayoffString += `${actualYears} year${actualYears > 1 ? 's' : ''}`;
-    if (actualRemainingMonths > 0) actualPayoffString += `${actualYears > 0 ? ', ' : ''}${actualRemainingMonths} month${actualRemainingMonths > 1 ? 's' : ''}`;
-    if (actualPayoffString === "" && n_actual_months > 0 && n_actual_months < 1) actualPayoffString = "Less than a month";
-    if (actualPayoffString === "" && n_actual_months === 0) actualPayoffString = "Paid off immediately";
-    setPayoffTime(actualPayoffString || "N/A");
+    setPayoffTime(formatPayoffTime(n_actual_months));
+    setOriginalPayoffTime(formatPayoffTime(n_original));
 
-    const originalYears = Math.floor(n_original / 12);
-    const originalRemainingMonths = Math.ceil(n_original % 12);
-    let originalPayoffStr = "";
-    if (originalYears > 0) originalPayoffStr += `${originalYears} year${originalYears > 1 ? 's' : ''}`;
-    if (originalRemainingMonths > 0) originalPayoffStr += `${originalYears > 0 ? ', ' : ''}${originalRemainingMonths} month${originalRemainingMonths > 1 ? 's' : ''}`;
-    setOriginalPayoffTime(originalPayoffStr || "N/A");
-
-    const calculatedTotalCost_actual = M_total_for_payoff * n_actual_months; // Total paid with current strategy
+    const calculatedTotalCost_actual = M_total_for_payoff * n_actual_months;
     const calculatedTotalInterest_actual = calculatedTotalCost_actual - P;
-    setTotalInterest(formatNumber(calculatedTotalInterest_actual));
-    setTotalCost(formatNumber(calculatedTotalCost_actual));
+    setTotalInterest(formatNumber(Math.max(0, calculatedTotalInterest_actual))); // Ensure non-negative interest
+    setTotalCost(formatNumber(calculatedTotalCost_actual + numDownPayment)); // Total cost includes down payment
     
     // Interest saved compared to standard M_base payments over n_original term
     const originalTotalCost_standard = M_base * n_original;
     const originalTotalInterest_standard = originalTotalCost_standard - P;
     
-    if(numExtraMonthlyPayment > 0 || isBiWeekly){
+    if (numExtraMonthlyPayment > 0 || isBiWeekly) {
       setInterestSaved(formatNumber(Math.max(0, originalTotalInterest_standard - calculatedTotalInterest_actual)));
     } else {
-      setInterestSaved(null);
+      setInterestSaved(null); // No savings if no acceleration
     }
   };
+
+  const formatPayoffTime = (totalMonths: number): string => {
+    if (!isFinite(totalMonths) || totalMonths <= 0) return "N/A";
+    if (totalMonths < 1) return "Less than a month";
+
+    const years = Math.floor(totalMonths / 12);
+    const remainingMonths = Math.ceil(totalMonths % 12);
+    
+    let payoffString = "";
+    if (years > 0) payoffString += `${years} year${years > 1 ? 's' : ''}`;
+    if (remainingMonths > 0) {
+      if (years > 0) payoffString += `, `;
+      payoffString += `${remainingMonths} month${remainingMonths > 1 ? 's' : ''}`;
+    }
+    if (payoffString === "") payoffString = "Instantly (or error)"; // Should be caught by P=0
+    return payoffString;
+  };
+
 
   return (
     <Card className="w-full shadow-lg">
@@ -197,7 +210,7 @@ export function LoanCalculator() {
           </div>
           <div>
             <Label htmlFor="loan-term">Loan Term (Years)</Label>
-            <Input id="loan-term" type="number" value={loanTermYears} onChange={(e) => setLoanTermYears(e.target.value)} placeholder="e.g., 30" />
+            <Input id="loan-term" type="number" value={loanTermYears} onChange={(e) => setLoanTermYears(e.target.value)} placeholder="e.g., 30 or 2.5" />
           </div>
           <div>
             <Label htmlFor="loan-extra-payment">Extra Monthly Payment ($)</Label>
@@ -234,7 +247,7 @@ export function LoanCalculator() {
             {(isBiWeekly || parseFloat(extraMonthlyPayment) > 0) && originalPayoffTime && <p className="text-sm text-muted-foreground"><span className="font-medium">Original Payoff Time (standard payments):</span> {originalPayoffTime}</p>}
             {totalInterest && <p><span className="font-medium">Total Interest Paid:</span> ${totalInterest}</p>}
             {(isBiWeekly || parseFloat(extraMonthlyPayment) > 0) && interestSaved && parseFloat(interestSaved.replace(/,/g, '')) > 0 && <p className="text-green-600 font-semibold"><span className="font-medium">Interest Saved (due to accel. payments):</span> ${interestSaved}</p>}
-            {totalCost && <p><span className="font-medium">Total Loan Cost (Principal + Interest):</span> ${totalCost}</p>}
+            {totalCost && <p><span className="font-medium">Total Loan Cost (Principal + Interest + Down Payment):</span> ${totalCost}</p>}
             {isBiWeekly && <p className="text-xs text-muted-foreground mt-2">Note: Bi-weekly payments effectively result in one extra standard monthly payment per year, accelerating payoff.</p>}
           </div>
         )}
@@ -242,3 +255,4 @@ export function LoanCalculator() {
     </Card>
   );
 }
+
