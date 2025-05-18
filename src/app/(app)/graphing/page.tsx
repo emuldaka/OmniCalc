@@ -15,6 +15,7 @@ export interface EquationItem {
   plottedGraph1: boolean;
   plottedGraph2: boolean;
   plottedGraph3: boolean;
+  plottedGraph4: boolean; // Added for the fourth graph
   color: string;
 }
 
@@ -45,10 +46,10 @@ const evaluateEquationForX = (equationString: string, xValue: number): number | 
     // More robust implicit multiplication and function parsing
     let preparedString = exprToEvaluate
       // Implicit multiplication: number before x or (, x or ) before number or (, x or ) before x or (, ) before (
-      .replace(/(?<![a-zA-Z0-9_])([0-9.]+)([xX(a-zA-Z])/gi, '$1*$2') // number before x or ( or letter (for functions like 2sin(x))
-      .replace(/([xX)])([0-9.(a-zA-Z])/gi, '$1*$2') // x or ) before number or ( or letter
-      .replace(/([xX)])([xX(])/gi, '$1*$2')    // x or ) before x or (
-      .replace(/(\))(\()/gi, '$1*$2')          // ) before (
+      .replace(/(?<![a-zA-Z0-9_])([0-9.]+)([xX(a-zA-Z])/gi, '$1*$2') 
+      .replace(/([xX)])([0-9.(a-zA-Z])/gi, '$1*$2') 
+      .replace(/([xX)])([xX(])/gi, '$1*$2')    
+      .replace(/(\))(\()/gi, '$1*$2')          
       // Superscripts
       .replace(/²/g, '**2')
       .replace(/³/g, '**3')
@@ -56,8 +57,8 @@ const evaluateEquationForX = (equationString: string, xValue: number): number | 
       // Match "func(...)" and use callback to ensure argument is treated literally
       .replace(/e\^\(([^)]*)\)/gi, (match, p1) => `Math.exp(${p1})`)
       .replace(/E\^\(([^)]*)\)/gi, (match, p1) => `Math.exp(${p1})`)
-      .replace(/e\^([a-zA-Z0-9_.\/*\-+^()]+)/gi, (match, p1) => `Math.exp(${p1})`) // For e^term without parens
-      .replace(/E\^([a-zA-Z0-9_.\/*\-+^()]+)/gi, (match, p1) => `Math.exp(${p1})`) // For E^term without parens
+      .replace(/e\^([a-zA-Z0-9_.\/*\-+^()]+)/gi, (match, p1) => `Math.exp(${p1})`) 
+      .replace(/E\^([a-zA-Z0-9_.\/*\-+^()]+)/gi, (match, p1) => `Math.exp(${p1})`) 
       .replace(/\basin\s*\(([^)]*)\)/gi, (match, p1) => `Math.asin(${p1})`)
       .replace(/\barcsin\s*\(([^)]*)\)/gi, (match, p1) => `Math.asin(${p1})`)
       .replace(/\bacos\s*\(([^)]*)\)/gi, (match, p1) => `Math.acos(${p1})`)
@@ -75,7 +76,7 @@ const evaluateEquationForX = (equationString: string, xValue: number): number | 
       .replace(/\^/g, '**')
       // Constants (pi and e should be last to avoid conflicts with function names like 'exp')
       .replace(/\bpi\b/gi, 'Math.PI')
-      .replace(/\be\b/gi, 'Math.E'); // Standalone 'e' for constant
+      .replace(/\be\b/gi, 'Math.E'); 
 
     const func = new Function('x', `return ${preparedString}`);
     const result = func(xValue);
@@ -83,8 +84,10 @@ const evaluateEquationForX = (equationString: string, xValue: number): number | 
     if (typeof result === 'number' && isFinite(result)) {
       return result;
     }
+    // console.error(`Evaluation returned non-finite or non-number for "${equationString}" (prepared: "${preparedString}") with x=${xValue}:`, result);
     return null;
   } catch (error) {
+    // Uncomment for debugging parsing errors
     // console.error(`Error evaluating equation "${equationString}" (raw) -> "${exprToEvaluate}" (stripped) -> "${preparedString}" (prepared) for x=${xValue}:`, error);
     return null;
   }
@@ -114,21 +117,23 @@ export default function GraphingPage() {
       {
         id: `eq-${Date.now()}`,
         equationString: equationString,
-        plottedGraph1: true, // Default to plot on Graph 1
+        plottedGraph1: true, 
         plottedGraph2: false,
         plottedGraph3: false,
+        plottedGraph4: false, // Default for new graph
         color: lineColors[prev.length % lineColors.length],
       },
     ]);
   }, []);
 
-  const handleToggleEquationPlotOnGraph = useCallback((id: string, graphNumber: 1 | 2 | 3) => {
+  const handleToggleEquationPlotOnGraph = useCallback((id: string, graphNumber: 1 | 2 | 3 | 4) => {
     setStoredEquations((prev) =>
       prev.map((eq) => {
         if (eq.id === id) {
           if (graphNumber === 1) return { ...eq, plottedGraph1: !eq.plottedGraph1 };
           if (graphNumber === 2) return { ...eq, plottedGraph2: !eq.plottedGraph2 };
           if (graphNumber === 3) return { ...eq, plottedGraph3: !eq.plottedGraph3 };
+          if (graphNumber === 4) return { ...eq, plottedGraph4: !eq.plottedGraph4 };
         }
         return eq;
       })
@@ -139,12 +144,13 @@ export default function GraphingPage() {
     setStoredEquations((prev) => prev.filter((eq) => eq.id !== id));
   }, []);
 
-  const handleClearPlotsForGraph = useCallback((graphNumber: 1 | 2 | 3) => {
+  const handleClearPlotsForGraph = useCallback((graphNumber: 1 | 2 | 3 | 4) => {
     setStoredEquations((prev) =>
       prev.map((eq) => {
         if (graphNumber === 1) return { ...eq, plottedGraph1: false };
         if (graphNumber === 2) return { ...eq, plottedGraph2: false };
         if (graphNumber === 3) return { ...eq, plottedGraph3: false };
+        if (graphNumber === 4) return { ...eq, plottedGraph4: false };
         return eq;
       })
     );
@@ -183,6 +189,18 @@ export default function GraphingPage() {
       }));
   }, [storedEquations]);
 
+  const graphDataForPlot4: FunctionPlotData[] = useMemo(() => {
+    return storedEquations
+      .filter((eq) => eq.plottedGraph4)
+      .map((eq) => ({
+        id: eq.id,
+        points: generatePointsForEquation(eq.equationString),
+        color: eq.color,
+        name: eq.equationString.length > 30 ? eq.equationString.substring(0, 27) + "..." : eq.equationString,
+      }));
+  }, [storedEquations]);
+
+
   return (
     <div className="flex flex-col h-full space-y-6">
       <Card className="shadow-lg">
@@ -205,7 +223,7 @@ export default function GraphingPage() {
               <FunctionSquare className="mr-3 h-7 w-7" /> Stored Equations
             </CardTitle>
             <CardDescription>
-              Manage your equations. Check to plot them on the desired graph (G1, G2, G3).
+              Manage your equations. Check to plot them on the desired graph (G1, G2, G3, G4).
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -218,8 +236,8 @@ export default function GraphingPage() {
         </Card>
       </div>
 
-      {/* Graphs Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Graphs Section - 2x2 Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <GraphingSection 
           data={graphDataForPlot1} 
           onClearPlots={() => handleClearPlotsForGraph(1)}
@@ -234,6 +252,11 @@ export default function GraphingPage() {
           data={graphDataForPlot3} 
           onClearPlots={() => handleClearPlotsForGraph(3)}
           graphTitle="Graph 3"
+        />
+        <GraphingSection 
+          data={graphDataForPlot4} 
+          onClearPlots={() => handleClearPlotsForGraph(4)}
+          graphTitle="Graph 4"
         />
       </div>
     </div>

@@ -2,7 +2,7 @@
 // src/components/advanced-calculator/stored-equations-container.tsx
 "use client";
 
-import type { EquationItem } from "@/app/(app)/graphing/page"; // Updated path
+import type { EquationItem } from "@/app/(app)/graphing/page"; 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,7 +11,7 @@ import { Trash2, LineChart } from "lucide-react";
 
 interface StoredEquationsContainerProps {
   equations: EquationItem[];
-  onTogglePlot: (id: string, graphNumber: 1 | 2 | 3) => void;
+  onTogglePlot: (id: string, graphNumber: 1 | 2 | 3 | 4) => void; // Updated for four graphs
   onDeleteEquation: (id: string) => void;
 }
 
@@ -47,13 +47,17 @@ export function StoredEquationsContainer({
                 </div>
               </div>
               <div className="flex items-center space-x-2 ml-4">
-                {[1, 2, 3].map(graphNum => (
+                {[1, 2, 3, 4].map(graphNum => ( // Iterate up to 4 for checkboxes
                   <div key={graphNum} className="flex flex-col items-center">
                      <label htmlFor={`plot-g${graphNum}-eq-${item.id}`} className="text-xs mb-0.5">G{graphNum}</label>
                     <Checkbox
                       id={`plot-g${graphNum}-eq-${item.id}`}
-                      checked={graphNum === 1 ? item.plottedGraph1 : graphNum === 2 ? item.plottedGraph2 : item.plottedGraph3}
-                      onCheckedChange={() => onTogglePlot(item.id, graphNum as 1 | 2 | 3)}
+                      checked={
+                        graphNum === 1 ? item.plottedGraph1 : 
+                        graphNum === 2 ? item.plottedGraph2 : 
+                        graphNum === 3 ? item.plottedGraph3 : item.plottedGraph4
+                      }
+                      onCheckedChange={() => onTogglePlot(item.id, graphNum as 1 | 2 | 3 | 4)}
                       aria-label={`Plot on Graph ${graphNum} equation ${item.equationString}`}
                     />
                   </div>
