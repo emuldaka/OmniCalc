@@ -28,8 +28,8 @@ const featureCards: FeatureCardProps[] = [
   {
     href: "/advanced-calculator",
     icon: BeakerIcon,
-    title: "Advanced Scientific Calculator",
-    description: "Utilize scientific functions, store values, and manage history with multiple instances.",
+    title: "Advanced Scientific",
+    description: "Utilize scientific functions, store values, and manage history with instances.",
   },
   {
     href: "/graphing",
@@ -59,32 +59,32 @@ const featureCards: FeatureCardProps[] = [
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-br from-background to-secondary">
-      <header className="mb-12 text-center">
-        <Sigma className="mx-auto h-24 w-24 text-primary mb-4" />
-        <h1 className="text-5xl font-bold text-primary">Welcome to OmniCalc</h1>
-        <p className="text-xl text-muted-foreground mt-2">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 md:p-6 bg-gradient-to-br from-background to-secondary">
+      <header className="mb-8 text-center"> {/* Reduced mb-12 to mb-8 */}
+        <Sigma className="mx-auto h-20 w-20 text-primary mb-3" /> {/* Reduced size and mb */}
+        <h1 className="text-4xl font-bold text-primary">Welcome to OmniCalc</h1> {/* Reduced text-5xl to text-4xl */}
+        <p className="text-lg text-muted-foreground mt-1"> {/* Reduced text-xl to text-lg and mt-2 to mt-1 */}
           Your all-in-one solution for calculations, conversions, and specialized tools.
         </p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 lg:gap-6 max-w-6xl w-full"> {/* Reduced gap, adjusted max-w */}
         {featureCards.map((feature) => (
           <Link href={feature.href} passHref key={feature.title}>
             <Card className="hover:shadow-xl transition-shadow duration-300 cursor-pointer h-full flex flex-col">
-              <CardHeader>
-                <div className="flex items-center text-primary mb-2">
-                  <feature.icon className="h-8 w-8 mr-3" />
-                  <CardTitle className="text-2xl">{feature.title}</CardTitle>
+              <CardHeader className="p-4"> {/* Reduced padding */}
+                <div className="flex items-center text-primary mb-1.5"> {/* Reduced mb-2 to mb-1.5 */}
+                  <feature.icon className="h-6 w-6 mr-2" /> {/* Reduced size and mr */}
+                  <CardTitle className="text-xl">{feature.title}</CardTitle> {/* Reduced text-2xl to text-xl */}
                 </div>
-                <CardDescription className="text-base min-h-[3em]"> {/* Ensure consistent description height */}
+                <CardDescription className="text-sm min-h-[3.5em]"> {/* Reduced text-base, adjusted min-h for ~2-3 lines */}
                   {feature.description}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="mt-auto">
-                <Button variant="default" className="w-full text-lg py-5 bg-primary hover:bg-primary/90">
-                  Go to {feature.title.split(" ")[0]} {/* Shorten button text */}
-                  <ArrowRight className="ml-2 h-5 w-5" />
+              <CardContent className="p-4 pt-0 mt-auto"> {/* Reduced padding, removed pt-0 if it was conflicting */}
+                <Button variant="default" className="w-full text-sm py-2.5 bg-primary hover:bg-primary/90"> {/* Reduced text-lg, py-5 */}
+                  Go to {feature.title.split(" ")[0]}
+                  <ArrowRight className="ml-2 h-4 w-4" /> {/* Reduced size */}
                 </Button>
               </CardContent>
             </Card>
@@ -92,7 +92,7 @@ export default function HomePage() {
         ))}
       </div>
 
-      <footer className="mt-16 text-center text-muted-foreground">
+      <footer className="mt-8 text-center text-muted-foreground"> {/* Reduced mt-16 to mt-8 */}
         {/* You can add a footer here if desired */}
       </footer>
     </div>
