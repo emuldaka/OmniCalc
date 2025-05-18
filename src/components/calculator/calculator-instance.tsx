@@ -68,7 +68,7 @@ export function CalculatorInstance({ instanceId }: CalculatorInstanceProps) {
   }
 
   return (
-    <Card className="w-full shadow-2xl flex flex-col"> {/* max-w-lg removed, flex-col added */}
+    <Card className="w-full shadow-2xl flex flex-col h-fit"> {/* Added h-fit */}
       <CardHeader className="pb-2 pt-4 px-4"> {/* Reduced padding */}
         {/* <CardTitle className="text-lg text-center text-primary">Calculator {instanceId}</CardTitle> */}
       </CardHeader>
