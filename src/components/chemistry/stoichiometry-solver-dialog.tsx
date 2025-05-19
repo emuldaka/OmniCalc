@@ -15,11 +15,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-// import { solveStoichiometryProblem } from "@/actions/ai-actions"; // Server action removed for static export
-import type { StoichiometryInput, StoichiometryOutput, Reactant, TargetProduct, ActualYield } from "@/actions/ai-actions";
+import { solveStoichiometryProblem } from "@/actions/ai-actions"; // Updated import path
+import type { StoichiometryInput, StoichiometryOutput, Reactant, TargetProduct, ActualYield } from "@/actions/ai-actions"; // Keep type imports
 import { Loader2, PlusCircle, Trash2, Wand2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -166,8 +165,7 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-grow overflow-y-auto min-h-0">
-          <div className="space-y-6 py-4 px-6">
+        <div className="flex-grow overflow-y-auto min-h-0 py-4 px-6 space-y-6">
             <div>
               <Label htmlFor="unbalanced-equation" className="text-lg font-medium text-primary">Chemical Equation</Label>
               <Textarea
@@ -420,20 +418,19 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
                   {result.calculationLog && result.calculationLog.length > 0 && (
                     <div>
                       <p className="font-semibold mt-3">Calculation Log:</p>
-                      <ScrollArea className="h-[150px] w-full rounded-md border p-2 bg-muted/50 text-xs">
+                      <div className="h-[150px] w-full rounded-md border p-2 bg-muted/50 text-xs overflow-y-auto">
                         {result.calculationLog.map((log, i) => (
                           <p key={i} className="whitespace-pre-wrap">{log}</p>
                         ))}
-                      </ScrollArea>
+                      </div>
                     </div>
                   )}
                 </CardContent>
               </Card>
             )}
           </div>
-        </div>
 
-        <DialogFooter className="sm:justify-between pt-4 border-t flex-shrink-0">
+        <DialogFooter className="flex-shrink-0 sm:justify-between pt-4 border-t">
           <Button type="button" variant="outline" onClick={resetForm}>Reset Form</Button>
           <DialogClose asChild>
             <Button type="button" variant="secondary">Close</Button>
