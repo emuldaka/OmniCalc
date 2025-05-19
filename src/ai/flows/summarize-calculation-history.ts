@@ -32,9 +32,12 @@ export type SummarizeCalculationHistoryOutput = z.infer<typeof SummarizeCalculat
 export async function summarizeCalculationHistory(
   input: SummarizeCalculationHistoryInput
 ): Promise<SummarizeCalculationHistoryOutput> {
-  return summarizeCalculationHistoryFlow(input);
+  // Static export: AI flow disabled
+  // return summarizeCalculationHistoryFlow(input);
+  throw new Error("summarizeCalculationHistoryFlow is disabled for static export.");
 }
 
+/*
 const prompt = ai.definePrompt({
   name: 'summarizeCalculationHistoryPrompt',
   input: {schema: SummarizeCalculationHistoryInputSchema},
@@ -59,3 +62,4 @@ const summarizeCalculationHistoryFlow = ai.defineFlow(
     return output!;
   }
 );
+*/

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Bot, Loader2, CornerDownLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { processAiInput } from "@/actions/ai-actions";
+// import { processAiInput } from "@/actions/ai-actions"; // Server action removed for static export
 import { useSettings } from "@/contexts/settings-context";
 
 interface AiInputFieldProps {
@@ -24,40 +24,50 @@ export function AiInputField({ onAiResult, placeholder = "Ask AI: e.g., '15% of 
     event.preventDefault();
     if (!inputValue.trim()) return;
 
-    startTransition(async () => {
-      try {
-        const result = await processAiInput(inputValue);
-        if (result.error) {
-          toast({
-            variant: "destructive",
-            title: "AI Error",
-            description: result.error,
-          });
-          onAiResult("Error", inputValue);
-        } else if (result.evaluatedResult !== undefined) {
-          onAiResult(result.evaluatedResult, result.calculation || inputValue);
-          toast({
-            title: "AI Calculation Complete",
-            description: `${result.calculation || inputValue} = ${formatNumber(result.evaluatedResult)}`,
-          });
-        } else {
-           toast({
-            variant: "destructive",
-            title: "AI Error",
-            description: "Could not evaluate the expression.",
-          });
-          onAiResult("Error", inputValue);
-        }
-      } catch (error) {
-        toast({
-          variant: "destructive",
-          title: "AI Processing Error",
-          description: "An unexpected error occurred.",
-        });
-        onAiResult("Error", inputValue);
-      }
-      setInputValue(""); // Clear input after submission
+    // For static export, AI processing via server action is not available.
+    toast({
+      variant: "destructive",
+      title: "AI Feature Unavailable",
+      description: "AI-powered input is not available in this static version of the app.",
+      duration: 5000,
     });
+    setInputValue(""); // Clear input
+
+    // Original logic commented out:
+    // startTransition(async () => {
+    //   try {
+    //     const result = await processAiInput(inputValue);
+    //     if (result.error) {
+    //       toast({
+    //         variant: "destructive",
+    //         title: "AI Error",
+    //         description: result.error,
+    //       });
+    //       onAiResult("Error", inputValue);
+    //     } else if (result.evaluatedResult !== undefined) {
+    //       onAiResult(result.evaluatedResult, result.calculation || inputValue);
+    //       toast({
+    //         title: "AI Calculation Complete",
+    //         description: `${result.calculation || inputValue} = ${formatNumber(result.evaluatedResult)}`,
+    //       });
+    //     } else {
+    //        toast({
+    //         variant: "destructive",
+    //         title: "AI Error",
+    //         description: "Could not evaluate the expression.",
+    //       });
+    //       onAiResult("Error", inputValue);
+    //     }
+    //   } catch (error) {
+    //     toast({
+    //       variant: "destructive",
+    //       title: "AI Processing Error",
+    //       description: "An unexpected error occurred.",
+    //     });
+    //     onAiResult("Error", inputValue);
+    //   }
+    //   setInputValue(""); // Clear input after submission
+    // });
   };
 
   return (
@@ -70,11 +80,11 @@ export function AiInputField({ onAiResult, placeholder = "Ask AI: e.g., '15% of 
           onChange={(e) => setInputValue(e.target.value)}
           placeholder={placeholder}
           className="pl-10 pr-20"
-          disabled={isPending}
+          disabled={isPending} // isPending might not be used if server action is removed
         />
-         <Button 
-          type="submit" 
-          size="icon" 
+         <Button
+          type="submit"
+          size="icon"
           className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7"
           variant="ghost"
           disabled={isPending || !inputValue.trim()}

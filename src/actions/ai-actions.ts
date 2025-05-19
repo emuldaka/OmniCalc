@@ -1,9 +1,9 @@
-
 // src/actions/ai-actions.ts
 "use server";
 
-import { understandCalculationIntent } from "@/ai/flows/understand-calculation-intent";
-import { solveStoichiometryProblem as solveStoichiometryProblemFlow, type StoichiometryInput, type StoichiometryOutput } from "@/ai/flows/solve-stoichiometry-problem";
+// import { understandCalculationIntent } from "@/ai/flows/understand-calculation-intent";
+// import { solveStoichiometryProblem as solveStoichiometryProblemFlow, type StoichiometryInput, type StoichiometryOutput } from "@/ai/flows/solve-stoichiometry-problem";
+import type { StoichiometryInput, StoichiometryOutput } from "@/ai/flows/solve-stoichiometry-problem";
 
 
 interface AiProcessResult {
@@ -15,68 +15,56 @@ interface AiProcessResult {
 // Basic expression evaluator (safer than eval)
 function evaluateExpression(expression: string): number | string {
   try {
-    // Sanitize the expression: allow numbers, basic operators, parentheses, decimal points.
-    // This is a very basic sanitizer and might need to be more robust for complex math.
     const sanitizedExpression = expression.replace(/[^-()\d/*+.]/g, '');
     if (sanitizedExpression !== expression) {
-      // Potentially harmful characters were removed or expression was malformed
-      // For safety, one might choose to throw an error here or handle it differently.
-      // For now, we try to evaluate the sanitized one but this indicates a potential issue.
+      // Potentially harmful characters were removed
     }
-
-    // Using Function constructor for safer evaluation than direct eval()
-    // It evaluates the code in the global scope, not the local scope of the function.
     const result = new Function('return ' + sanitizedExpression)();
-    
     if (typeof result === 'number' && !Number.isNaN(result) && Number.isFinite(result)) {
       return result;
     } else {
       return "Error: Invalid calculation result";
     }
   } catch (e) {
-    // console.error("Evaluation error:", e);
     return "Error: Could not evaluate expression";
   }
 }
 
 
 export async function processAiInput(expression: string): Promise<AiProcessResult> {
-  try {
-    const intentResult = await understandCalculationIntent({ expression });
-    if (intentResult && intentResult.calculation) {
-      const evaluated = evaluateExpression(intentResult.calculation);
-      if (typeof evaluated === 'number') {
-        return { calculation: intentResult.calculation, evaluatedResult: evaluated };
-      } else {
-        // evaluated is an error string
-        return { calculation: intentResult.calculation, error: evaluated };
-      }
-    }
-    return { error: "AI could not understand the expression." };
-  } catch (error) {
-    // console.error("AI processing error:", error);
-    let errorMessage = "An error occurred while processing with AI.";
-    if (error instanceof Error) {
-      errorMessage = error.message;
-    }
-    return { error: errorMessage };
-  }
+  // For static export, AI processing is not available.
+  // const intentResult = await understandCalculationIntent({ expression });
+  // if (intentResult && intentResult.calculation) {
+  //   const evaluated = evaluateExpression(intentResult.calculation);
+  //   if (typeof evaluated === 'number') {
+  //     return { calculation: intentResult.calculation, evaluatedResult: evaluated };
+  //   } else {
+  //     return { calculation: intentResult.calculation, error: evaluated };
+  //   }
+  // }
+  // return { error: "AI could not understand the expression." };
+  return { error: "AI-powered input is unavailable in this static version." };
 }
 
 // Server action for the new stoichiometry flow
 export async function solveStoichiometryProblem(input: StoichiometryInput): Promise<StoichiometryOutput> {
-  try {
-    const result = await solveStoichiometryProblemFlow(input);
-    return result;
-  } catch (error) {
-    console.error("Stoichiometry flow error in action:", error);
-    let errorMessage = "An error occurred while solving the stoichiometry problem with AI.";
-    if (error instanceof Error) {
-      errorMessage = error.message;
-    }
-    return { 
-      errorMessage: errorMessage,
-      calculationLog: ["Server action failed to invoke AI flow."]
+  // For static export, AI processing is not available.
+  // try {
+  //   const result = await solveStoichiometryProblemFlow(input);
+  //   return result;
+  // } catch (error) {
+  //   console.error("Stoichiometry flow error in action:", error);
+  //   let errorMessage = "An error occurred while solving the stoichiometry problem with AI.";
+  //   if (error instanceof Error) {
+  //     errorMessage = error.message;
+  //   }
+  //   return {
+  //     errorMessage: errorMessage,
+  //     calculationLog: ["Server action failed to invoke AI flow."]
+  //   };
+  // }
+   return {
+      errorMessage: "AI Stoichiometry Solver is unavailable in this static version.",
+      calculationLog: ["AI processing is disabled for static export."]
     };
-  }
 }

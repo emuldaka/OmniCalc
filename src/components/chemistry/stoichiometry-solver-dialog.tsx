@@ -1,4 +1,3 @@
-
 // src/components/chemistry/stoichiometry-solver-dialog.tsx
 "use client";
 
@@ -16,10 +15,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area"; // Keep for nested scroll if needed (e.g. calculation log)
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { solveStoichiometryProblem } from "@/actions/ai-actions";
+// import { solveStoichiometryProblem } from "@/actions/ai-actions"; // Server action removed for static export
 import type { StoichiometryInput, StoichiometryOutput, Reactant, TargetProduct, ActualYield } from "@/actions/ai-actions";
 import { Loader2, PlusCircle, Trash2, Wand2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -38,7 +37,7 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
   const [reactants, setReactants] = useState<Reactant[]>([{ ...initialReactant }]);
   const [targetProducts, setTargetProducts] = useState<TargetProduct[]>([{ ...initialTargetProduct }]);
   const [actualYield, setActualYield] = useState<ActualYield | undefined>(undefined);
-  
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState<StoichiometryOutput | null>(null);
   const { toast } = useToast();
@@ -78,7 +77,7 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
     }
     setTargetProducts(newProducts);
   };
-  
+
   const handleActualYieldChange = (field: keyof ActualYield, value: any) => {
     setActualYield(prev => {
         const current = prev || { formula: "", amount: 0, unit: "grams" };
@@ -91,45 +90,54 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
 
 
   const handleSubmit = async () => {
-    if (!unbalancedEquation.trim()) {
-      toast({ variant: "destructive", title: "Error", description: "Please enter a chemical equation." });
-      return;
-    }
-    if (reactants.some(r => !r.formula.trim() || r.amount === undefined || r.amount <= 0)) {
-      toast({ variant: "destructive", title: "Error", description: "Please provide valid formula and positive amount for all reactants." });
-      return;
-    }
-     if (targetProducts.some(p => !p.formula.trim()) && targetProducts.length > 0 && !(targetProducts.length === 1 && !targetProducts[0].formula)) {
-      toast({ variant: "destructive", title: "Error", description: "Please provide a formula for all target products or remove empty ones." });
-      return;
-    }
+    // For static export, AI processing via server action is not available.
+    toast({
+      variant: "destructive",
+      title: "AI Feature Unavailable",
+      description: "AI-powered stoichiometry solving is not available in this static version of the app.",
+      duration: 7000,
+    });
+    setResult({ errorMessage: "AI Stoichiometry Solver is unavailable in this version.", calculationLog: [] });
 
+    // Original logic commented out:
+    // if (!unbalancedEquation.trim()) {
+    //   toast({ variant: "destructive", title: "Error", description: "Please enter a chemical equation." });
+    //   return;
+    // }
+    // if (reactants.some(r => !r.formula.trim() || r.amount === undefined || r.amount <= 0)) {
+    //   toast({ variant: "destructive", title: "Error", description: "Please provide valid formula and positive amount for all reactants." });
+    //   return;
+    // }
+    //  if (targetProducts.some(p => !p.formula.trim()) && targetProducts.length > 0 && !(targetProducts.length === 1 && !targetProducts[0].formula)) {
+    //   toast({ variant: "destructive", title: "Error", description: "Please provide a formula for all target products or remove empty ones." });
+    //   return;
+    // }
 
-    setIsProcessing(true);
-    setResult(null);
+    // setIsProcessing(true);
+    // setResult(null);
 
-    const input: StoichiometryInput = {
-      unbalancedEquation,
-      reactants: reactants.filter(r => r.formula.trim() && r.amount !== undefined && r.amount > 0),
-      targetProducts: targetProducts.filter(tp => tp.formula.trim()),
-      actualYield: (actualYield?.formula.trim() && actualYield.amount !== undefined && actualYield.amount > 0) ? actualYield : undefined,
-    };
+    // const input: StoichiometryInput = {
+    //   unbalancedEquation,
+    //   reactants: reactants.filter(r => r.formula.trim() && r.amount !== undefined && r.amount > 0),
+    //   targetProducts: targetProducts.filter(tp => tp.formula.trim()),
+    //   actualYield: (actualYield?.formula.trim() && actualYield.amount !== undefined && actualYield.amount > 0) ? actualYield : undefined,
+    // };
 
-    try {
-      const aiResult = await solveStoichiometryProblem(input);
-      setResult(aiResult);
-      if (aiResult.errorMessage) {
-        toast({ variant: "destructive", title: "Calculation Error", description: aiResult.errorMessage, duration: 7000 });
-      }
-    } catch (error) {
-      console.error("Stoichiometry solving error:", error);
-      toast({ variant: "destructive", title: "AI Error", description: "Failed to solve stoichiometry problem." });
-      setResult({ errorMessage: "An unexpected error occurred while contacting the AI.", calculationLog: [] });
-    } finally {
-      setIsProcessing(false);
-    }
+    // try {
+    //   const aiResult = await solveStoichiometryProblem(input);
+    //   setResult(aiResult);
+    //   if (aiResult.errorMessage) {
+    //     toast({ variant: "destructive", title: "Calculation Error", description: aiResult.errorMessage, duration: 7000 });
+    //   }
+    // } catch (error) {
+    //   console.error("Stoichiometry solving error:", error);
+    //   toast({ variant: "destructive", title: "AI Error", description: "Failed to solve stoichiometry problem." });
+    //   setResult({ errorMessage: "An unexpected error occurred while contacting the AI.", calculationLog: [] });
+    // } finally {
+    //   setIsProcessing(false);
+    // }
   };
-  
+
   const resetForm = () => {
     setUnbalancedEquation("");
     setReactants([{ ...initialReactant }]);
@@ -152,8 +160,9 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-2xl">Advanced Stoichiometry Solver</DialogTitle>
           <DialogDescription>
-            Enter equation, reactant amounts, and what to find. AI will attempt to balance, find limiting reactants, and calculate yields.
+            Enter equation, reactant amounts, and what to find.
             Gas conditions (P,V,T) can be specified for reactants/products. R = 0.08206 L·atm/mol·K.
+            <span className="font-semibold text-destructive block mt-1">AI Solving features are unavailable in this static version.</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -246,7 +255,7 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
                 </Button>
               </CardContent>
             </Card>
-            
+
             {/* Target Products Section */}
             <Card>
                 <CardHeader>
@@ -265,14 +274,14 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
                                     <Label htmlFor={`tp-formula-${index}`}>Product Formula</Label>
                                     <Input id={`tp-formula-${index}`} value={tp.formula} onChange={(e) => handleTargetProductChange(index, 'formula', e.target.value)} placeholder="e.g., CO2" />
                                 </div>
-                                <div className="flex items-center pt-6"> {/* Adjusted for Checkbox alignment */}
+                                <div className="flex items-center pt-6">
                                    <Checkbox
                                         id={`tp-volume-${index}`}
                                         checked={tp.calculateVolume || false}
                                         onCheckedChange={(checked) => handleTargetProductChange(index, 'calculateVolume', !!checked)}
                                         className="mr-2 h-4 w-4 accent-primary"
                                     />
-                                    <Label htmlFor={`tp-volume-${index}`} className="font-normal"> {/* Removed text-primary for default text color */}
+                                    <Label htmlFor={`tp-volume-${index}`} className="font-normal">
                                         Calculate Volume (if gas)
                                     </Label>
                                 </div>
@@ -341,7 +350,7 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
                     </div>
                 </CardContent>
             </Card>
-            
+
             <Button onClick={handleSubmit} disabled={isProcessing} className="w-full text-lg py-3">
               {isProcessing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Wand2 className="mr-2 h-5 w-5" />}
               Solve with AI
@@ -355,9 +364,9 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm">
                   {result.errorMessage && <p className="text-destructive font-semibold">Error: {result.errorMessage}</p>}
-                  
+
                   {result.balancedEquation && <p><span className="font-semibold">Balanced Equation:</span> <span className="font-mono bg-muted p-1 rounded">{result.balancedEquation}</span></p>}
-                  
+
                   {result.molarMassesUsed && Object.keys(result.molarMassesUsed).length > 0 && (
                     <div>
                         <p className="font-semibold">Molar Masses Used (g/mol):</p>
@@ -401,9 +410,9 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
                       </ul>
                     </div>
                   )}
-                  
+
                   {result.percentYield && (
-                    <p><span className="font-semibold">Percent Yield ({result.percentYield.productFormula}):</span> {result.percentYield.percentage.toFixed(2)}% 
+                    <p><span className="font-semibold">Percent Yield ({result.percentYield.productFormula}):</span> {result.percentYield.percentage.toFixed(2)}%
                        (Actual: {result.percentYield.actualYieldGrams.toFixed(3)}g / Theoretical: {result.percentYield.theoreticalYieldGrams.toFixed(3)}g)
                     </p>
                   )}
@@ -423,7 +432,7 @@ export function StoichiometrySolverDialog({ isOpen, onClose }: StoichiometrySolv
             )}
           </div>
         </div>
-        
+
         <DialogFooter className="sm:justify-between pt-4 border-t flex-shrink-0">
           <Button type="button" variant="outline" onClick={resetForm}>Reset Form</Button>
           <DialogClose asChild>

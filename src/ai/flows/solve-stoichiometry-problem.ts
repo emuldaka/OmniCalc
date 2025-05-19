@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Solves stoichiometry problems, including balancing equations,
@@ -9,9 +8,10 @@
  * - StoichiometryOutput - The return type for the solveStoichiometryProblem function.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import {ai} from '@/ai/genkit';
+import {z} from 'genkit';
 
+// Schemas remain defined for type inference but not exported directly
 const ReactantSchema = z.object({
   formula: z.string().describe('Chemical formula of the reactant (e.g., C3H8, O2).'),
   amount: z.number().describe('Amount of the reactant.'),
@@ -82,9 +82,12 @@ const StoichiometryOutputSchema = z.object({
 export type StoichiometryOutput = z.infer<typeof StoichiometryOutputSchema>;
 
 export async function solveStoichiometryProblem(input: StoichiometryInput): Promise<StoichiometryOutput> {
-  return solveStoichiometryProblemFlow(input);
+  // Static export: AI flow disabled
+  // return solveStoichiometryProblemFlow(input);
+  throw new Error("solveStoichiometryProblemFlow is disabled for static export.");
 }
 
+/*
 const R_L_ATM_MOL_K = 0.08206; // L·atm/(mol·K)
 const R_L_KPA_MOL_K = 8.314;   // L·kPa/(mol·K)
 const R_L_MMHG_MOL_K = 62.36; // L·mmHg/(mol·K) or L·torr/(mol·K)
@@ -94,7 +97,7 @@ const prompt = ai.definePrompt({
   name: 'solveStoichiometryProblemPrompt',
   input: { schema: StoichiometryInputSchema },
   output: { schema: StoichiometryOutputSchema },
-  prompt: `You are an expert chemistry AI assistant. Solve the following stoichiometry problem.
+  prompt: \`You are an expert chemistry AI assistant. Solve the following stoichiometry problem.
 Your task is to:
 1.  Balance the chemical equation: {{{unbalancedEquation}}}. If already balanced, confirm it.
 2.  For each reactant provided, calculate its molar mass (in g/mol). List these molar masses in the 'molarMassesUsed' output field. Use standard atomic weights (e.g., H:1.008, C:12.011, O:15.999, N:14.007, S:32.06, Fe:55.845, Cu:63.546, Na:22.990, Cl:35.453).
@@ -102,9 +105,9 @@ Your task is to:
     - If a reactant amount is given in grams, use its molar mass for conversion.
     - If a reactant is a gas and its amount is given in liters, use the Ideal Gas Law (PV=nRT) to find moles.
       The Ideal Gas Constant R values are:
-      - R = ${R_L_ATM_MOL_K} L·atm/(mol·K)
-      - R = ${R_L_KPA_MOL_K} L·kPa/(mol·K)
-      - R = ${R_L_MMHG_MOL_K} L·mmHg/(mol·K) (or L·torr/(mol·K))
+      - R = \${R_L_ATM_MOL_K} L·atm/(mol·K)
+      - R = \${R_L_KPA_MOL_K} L·kPa/(mol·K)
+      - R = \${R_L_MMHG_MOL_K} L·mmHg/(mol·K) (or L·torr/(mol·K))
       Ensure temperature is in Kelvin (K = °C + 273.15, K = (°F - 32) * 5/9 + 273.15).
       Ensure pressure is in atm, kPa, or mmHg/torr for the R values provided. If not, state that conversion is needed or use the appropriate R value.
 4.  Using the balanced equation and mole amounts, determine the limiting reactant.
@@ -116,7 +119,7 @@ Your task is to:
 
 Reactants:
 {{#each reactants}}
-- Formula: {{formula}}, Amount: {{amount}} {{unit}}{{#if pressure}} at {{pressure}} {{pressureUnit}}{/if}{{#if temperature}}, {{temperature}} {{temperatureUnit}}{{/if}}
+- Formula: {{formula}}, Amount: {{amount}} {{unit}}{{#if pressure}} at {{pressure}} {{pressureUnit}}{{/if}}{{#if temperature}}, {{temperature}} {{temperatureUnit}}{{/if}}
 {{/each}}
 
 {{#if targetProducts}}
@@ -131,7 +134,7 @@ Actual Yield Provided: {{actualYield.amount}} {{actualYield.unit}} of {{actualYi
 {{/if}}
 
 Return the output in the specified JSON format.
-`,
+\`,
 });
 
 const solveStoichiometryProblemFlow = ai.defineFlow(
@@ -153,4 +156,4 @@ const solveStoichiometryProblemFlow = ai.defineFlow(
     return output;
   }
 );
-
+*/

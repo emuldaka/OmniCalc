@@ -36,9 +36,12 @@ export type UnderstandCalculationIntentOutput = z.infer<
 export async function understandCalculationIntent(
   input: UnderstandCalculationIntentInput
 ): Promise<UnderstandCalculationIntentOutput> {
-  return understandCalculationIntentFlow(input);
+  // Static export: AI flow disabled
+  // return understandCalculationIntentFlow(input);
+  throw new Error("understandCalculationIntentFlow is disabled for static export.");
 }
 
+/*
 const prompt = ai.definePrompt({
   name: 'understandCalculationIntentPrompt',
   input: {schema: UnderstandCalculationIntentInputSchema},
@@ -62,3 +65,4 @@ const understandCalculationIntentFlow = ai.defineFlow(
     return output!;
   }
 );
+*/
