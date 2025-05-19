@@ -1,8 +1,12 @@
-import type {NextConfig} from 'next';
+import type { NextConfig } from "next";
+
+const isProd = process.env.NODE_ENV === "production";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  output: 'export', // Added for static export
+  output: "export",
+  trailingSlash: true,
+  basePath: isProd ? "/OmniCalc" : "", // Use /OmniCalc in production, empty locally
+  assetPrefix: isProd ? "/OmniCalc/" : "./", // Relative paths locally, absolute on GitHub Pages
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -10,13 +14,12 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    unoptimized: true, // Added for static export compatibility
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'placehold.co',
-        port: '',
-        pathname: '/**',
+        protocol: "https",
+        hostname: "placehold.co",
+        port: "",
+        pathname: "/**",
       },
     ],
   },
