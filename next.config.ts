@@ -5,8 +5,8 @@ const isProd = process.env.NODE_ENV === "production";
 const nextConfig: NextConfig = {
   output: "export",
   trailingSlash: true,
-  basePath: isProd ? "/OmniCalc" : "", // Use /OmniCalc in production, empty locally
-  assetPrefix: isProd ? "/OmniCalc/" : "./", // Relative paths locally, absolute on GitHub Pages
+  basePath: isProd ? "/OmniCalc" : "",
+  assetPrefix: isProd ? "https://emuldaka.github.io/OmniCalc/" : "",
   typescript: {
     ignoreBuildErrors: true,
   },
