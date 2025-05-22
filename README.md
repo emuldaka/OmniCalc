@@ -1,43 +1,63 @@
-This is a calculator/converter app using Next.js, TypeScript, and Tailwind, hosted with GitHub Pages and made with the assistance of Firebase Studio.
+# 🧮 Calculator & Converter App
 
-This app contains categories with the following:
+## 📝 Description
 
-Standard Calculator
-- This is for basic math calculations and has similar functionality to the Windows Calculator.
-- Can be duplicated up to 8 times, so 8 different calculators can be used at once.
+Welcome to my **Calculator & Converter App**, a powerful tool built with *Next.js*, *TypeScript*, and *Tailwind CSS*! 🎉 
+Hosted on GitHub Pages and developed with Firebase Studio, this app offers a wide range of calculators and converters for students, professionals, and anyone who loves crunching numbers.
 
-Unit Converter
-- 14 different types of conversions.
+### ✨ Key Features
 
-Advanced Science/Calculator
-- This is meant to function similarly to a TI-83 calculator that most high school students are used to. (In combination with the graphing calculator in the category below, these two components can do just about anything TI-83 calculators can.)
-- There are 3 of these side by side; all of them have the option to add results to storage and view history with independent data/storage for each of the 3. The 3 storage tables can also be added to directly.
+Standard Calculator 🖩
+- Perform basic math operations, similar to the Windows Calculator.
+- Duplicate up to 8 times for simultaneous calculations!
 
-Graphing Calculator
-- Allows you to type, paste, or use a traditional calculator to input a formula/expression for graphing.
-- 4 graphs in total.
-- Stored equations component that stores your added inputs and adds 4 checkboxes to each. Each checkbox is labeled and tied to a graph, so you can display the equations on any or all of the 4 graphs. Different equations can also be stacked on the same graph.
+Unit Converter 📏
+- Convert between 14 different unit types with ease.
 
-Chemistry Hub
-- Periodic Table: Has filters for categories; users can click on an element for detailed information on that specific element.
-- Molar Mass Simple Calculator
+Advanced Science/Calculator 🔬
+- Mimics a TI-83 calculator, familiar to high school students.
+- Three side-by-side instances with independent storage and history, plus direct table input.
+
+Graphing Calculator 📈
+- Input formulas via typing, pasting, or a traditional calculator.
+- Supports 4 graphs.
+- Stored equations component with 4 checkboxes per equation to toggle display on any/all graphs. Stack multiple equations on the same graph!
+
+Chemistry Hub 🧪
+- Filterable Periodic Table; click an element for detailed info.
+- Molar Mass Calculator
 - Stoichiometry Solver
 - Solution Dilution Calculator
 - pH/pOH Calculator
-- Basic info sections on: 6 Common Chemical Reaction Types & Quick Guide to Balancing Chemical Equations
+- Info on 6 Common Chemical Reaction Types & Balancing Equations
 
-Physics Hub
+Physics Hub ⚒️
 - Kinematics Calculator
 - Force & Energy Calculator
 - Relativity Calculator
 - Optics Calculator
 - Electromagnetism Calculator
+- Physical Constants
+- Common Physics Formulas
+- Fundamental Particles & Particle Physics
 
-Banking Calculator
+Banking Calculator 💰
 - Credit Card Payoff Calculator
-- Loan Calculator with optional bi-weekly payment calculator, which will display the difference in time and money between bi-weekly and monthly payments
+- Loan Calculator with bi-weekly vs. monthly payment comparisons
 - Bond Calculator
 - Savings Growth Calculator
 
-Settings
-- Adjust decimal point accuracy desired in outputs.
+Settings ⚙️
+- Customize decimal point accuracy for outputs.
+
+## 🛠️ Technologies Used
+
+- ⚛️ Next.js
+- 📜 TypeScript
+- 🎨 Tailwind CSS
+- 🔥 Firebase Studio
+- 🌐 Hosted on GitHub Pages at [emuldaka.github.io/OmniCalc](https://emuldaka.github.io/OmniCalc)
+
+## 📜 License
+
+© Elis Muldaka 2025 - All rights reserved 😎
